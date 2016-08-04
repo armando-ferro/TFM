@@ -1,0 +1,6 @@
+omnet/out
+omnet/results
+omnet/.*
+oment/*.exe
+oment/Makefile
+omnet/*.anf
