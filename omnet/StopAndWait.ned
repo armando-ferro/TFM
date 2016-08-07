@@ -22,6 +22,7 @@ network StopAndWait
         }
         fisico: fisico {
             @display("p=48,190");
+            Queue_Length = 20;
         }
         fisico1: fisico {
             @display("p=539,190");

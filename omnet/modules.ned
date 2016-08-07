@@ -18,8 +18,27 @@ simple fisico
 {
     parameters:
         @display("i=block/ifcard");
+        
+        @signal[rcvBit](type="int");
+        @statistic[rcv_Bit](title="rcvBit"; source="rcvBit"; record=vector);
+        
+        @signal[rcvPkt](type="int");
+        @statistic[rcv_Pkt](title="rcvPkt"; source="rcvPkt"; record=vector);
+        
+        @signal[sndBit](type="int");
+        @statistic[rcv_Bit](title="rcvBit"; source="rcvBit"; record=vector);
+        
+        @signal[sndPkt](type="int");
+        @statistic[rcv_Pkt](title="rcvPkt"; source="rcvPkt"; record=vector);
+        
+        @signal[lostPkt](type="int");
+        @statistic[lost_Pkt](title="lostPkt"; source="lostPkt"; record=vector);
+        
+        @signal[errorPkt](type="int");
+        @statistic[error_Pkt](title="errorPkt"; source="errorPkt"; record=vector);
 
-        int QueueLength = default(-1);
+        int Queue_Length = default(-1);
+        int Header_Tam = default(0);
     gates:
         output out @loose;
         input in @loose;
@@ -31,6 +50,12 @@ simple free_sw
 {
     parameters:
         @display("i=block/queue");
+        
+        int Addr = default(0);
+        int Header_Tam = default(0);
+        int Ack_Tam = default(1);
+        int Time_Out = default(300);
+        int Queue_Tam = default(-1);
 
         @signal[rcvACK](type="int");
         @statistic[rcv_ACK](title="rcvACK"; source="rcvACK"; record=vector);
@@ -96,8 +121,8 @@ simple dump
         @display("i=block/sink");
 
         @signal[rcvBit](type="double");
-        @statistic[rcv_bit](title="rcvBit"; source="rcvBit"; record=vector);
-
+        @statistic[rcv_bit](title="rcvBit"; source="rcvBit"; record=vector);        
+        
         @signal[rcvPkt](type="int");
         @statistic[rcv_Pkt](title="rcvPkt"; source="rcvPkt"; record=vector);
     gates:

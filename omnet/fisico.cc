@@ -17,6 +17,7 @@
 #include <omnetpp.h>
 #include <simtime.h>
 #include "Inter_Layer_m.h"
+#include "Packet_m.h"
 
 /*Estados*/
 const short idle = 0;
@@ -26,11 +27,26 @@ const short sending = 1;
 class fisico: public cSimpleModule
 {
 private:
+    /*gestiones internas*/
     int max_state;
+    int header_tam;
     short state_machine;
     cQueue *txQueue;
     cChannel * txChannel;
     cMessage *sent;
+    /*extracción de estadísticas*/
+    int sndBit;
+    int sndPkt;
+    int rcvBit;
+    int rcvPkt;
+    int lostPkt;
+    int errorPkt;
+    simsignal_t s_sndBit;
+    simsignal_t s_sndPkt;
+    simsignal_t s_rcvPkt;
+    simsignal_t s_rcvBit;
+    simsignal_t s_lostPkt;
+    simsignal_t s_errorPkt;
 public:
     fisico();
     virtual ~fisico();
@@ -48,21 +64,53 @@ Define_Module(fisico);
 
 
 fisico::fisico() {
+    /*gestion de funcionamiento*/
+    header_tam = 0;
     state_machine = idle;
     txQueue = NULL;
     txChannel = NULL;
     sent = NULL;
     max_state = -1;
+    /*extracción de estadísticas*/
+    sndBit = 0;
+    sndPkt = 0;
+    rcvBit = 0;
+    rcvPkt = 0;
+    lostPkt = 0;
+    errorPkt = 0;
+    s_sndBit = 0;
+    s_sndPkt = 0;
+    s_rcvBit = 0;
+    s_rcvPkt = 0;
+    s_lostPkt = 0;
+    s_errorPkt = 0;
+
+    WATCH(max_state);
 }
 
 fisico::~fisico() {
     cancelAndDelete(sent);
+    txQueue->~cQueue();
 
 }
 
 void fisico::initialize(){
     /*recoger parámetros*/
-    max_state = par("QueueLength");
+    if(par("Queue_Length").containsValue()){
+        max_state = par("Queue_Length");
+    }
+
+    if(par("Header_Tam").containsValue()){
+        header_tam = par("Header_Tam");
+    }
+
+    /*Enganchar señales*/
+    s_sndBit = registerSignal("sndBit");
+    s_sndPkt = registerSignal("sndPkt");
+    s_rcvBit = registerSignal("rcvBit");
+    s_rcvPkt = registerSignal("rcvPkt");
+    s_lostPkt = registerSignal("lostPkt");
+    s_errorPkt = registerSignal("errorPkt");
 
     /*Cola de mensajes a enviar*/
     txQueue = new cQueue("txQueue");
@@ -92,7 +140,12 @@ void fisico::handleMessage(cMessage *msg){
         if(msg->arrivedOn("up_in")){
             /*capa superior, extraer comprobar estado*/
             inter_layer *rx = check_and_cast<inter_layer *>(msg);
-            cPacket *pk = rx->decapsulate();
+            cPacket *pk;
+            if(rx->hasEncapsulatedPacket()){
+                pk = rx->decapsulate();
+            }else{
+                return;
+            }
             if(state_machine == idle){
                 /*enviar mensaje*/
                 send_out(pk);
@@ -104,7 +157,7 @@ void fisico::handleMessage(cMessage *msg){
                     if(txQueue->length() >= max_state){
                         /*se ha superado el limite*/
                         char msgname[20];
-                        sprintf(msgname,"cola llena-%d - %d",txQueue->length(),max_state);
+                        sprintf(msgname,"cola llena-%d",max_state);
                         bubble(msgname);
                         delete(pk);
                     }else{
@@ -119,18 +172,45 @@ void fisico::handleMessage(cMessage *msg){
             }
             delete(rx);
         }else{
-            /*externo, subir a la capa superior*/
-            send(msg,"up_out");
+            /*externo, comprobar eror, desencapsular y subir a la capa superior*/
+            Packet * rxp = check_and_cast<Packet *>(msg);
+            if(rxp->hasBitError()){
+                bubble("Paquete con error");
+                emit(s_errorPkt,++errorPkt);
+                delete(rxp);
+            }else{
+                if(rxp->hasEncapsulatedPacket()){
+                    Packet *data = (Packet *) rxp->decapsulate();
+                    int tam = data->getBitLength();
+                    rcvBit += tam;
+                    emit(s_rcvBit,rcvBit);
+                    emit(s_rcvPkt,++rcvPkt);
+                    send(data,"up_out");
+                }else{
+                    bubble("Paquete inesperado");
+                }
+                delete(rxp);
+            }
         }
     }
 }
 
 void fisico::send_out(cPacket * pk){
+    /*empaquetar sacar estadísticas*/
+    int tam;
+    tam = pk->getBitLength();
+    sndBit += tam;
+    char msgname[20];
+    sprintf(msgname,"fisico-%d",++sndPkt);
+    Packet  *rx = new Packet(msgname,0);
+    rx->setBitLength(header_tam);
+    rx->encapsulate(pk);
     /*enviar por out*/
-    send(pk,"out");
+    send(rx,"out");
     state_machine = sending;
     /*programar el auto mensaje para cambair de estado*/
     simtime_t txFinishTime = txChannel->getTransmissionFinishTime();
     scheduleAt(txFinishTime,sent);
-
+    emit(s_sndBit,sndBit);
+    emit(s_sndPkt,sndPkt);
 }
