@@ -28,29 +28,28 @@ network GoBackN
             @display("p=45,33");
             Time_Distribution = "exp";
             Size_Distribution = "exp";
-            Mean_Time=30;
-            Mean_Size=70;
+            Mean_Time = 30;
+            Mean_Size = 70;
         }
         gbn: free_gbn {
             @display("p=45,107");
-            ack_tam = 1;
+            Ack_Tam = 1;
         }
         fisico: fisico {
-            @display("p=48,190");
+            @display("p=45,190");
         }
         fisico1: fisico {
             @display("p=539,190");
         }
         gbn1: free_gbn {
-            @display("p=539,117");
-            ack_tam=1;
+            @display("p=539,107");
+            Ack_Tam = 1;
         }
         dump: dump {
-            @display("p=539,50");
+            @display("p=539,33");
         }
     connections:
         injector.down_out --> gbn.up_in;
-        gbn.up_out --> injector.down_in;
 
         gbn.down_out --> fisico.up_in;
         fisico.up_out --> gbn.down_in;
@@ -62,7 +61,5 @@ network GoBackN
         fisico1.out --> C --> fisico.in;
 
         gbn1.up_out --> dump.down_in;
-        dump.down_out --> gbn1.up_in;
-
 
 }

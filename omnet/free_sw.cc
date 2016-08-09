@@ -38,6 +38,7 @@ class free_sw : public cSimpleModule
     simsignal_t s_sndAck;
     simsignal_t s_rcvNack;
     simsignal_t s_sndNack;
+    simsignal_t s_queueTam;
 
   public:
     free_sw();
@@ -84,6 +85,7 @@ free_sw::free_sw()
     s_sndAck = 0;
     s_rcvNack = 0;
     s_sndNack = 0;
+    s_queueTam = 0;
 
 }
 
@@ -114,13 +116,14 @@ void free_sw::initialize()
         time_out = par("Time_Out");
     }
 
-    if(par("Queue_Tam").containsvalue()){
+    if(par("Queue_Tam").containsValue()){
         queue_tam = par("Queue_Tam");
     }
 
     /*Cola de mensajes a enviar*/
     txQueue = new cQueue("txQueue");
 
+    /*time out de reenvio*/
     time = new cMessage("time_out");
 
     /*suscribir señales*/
@@ -128,6 +131,7 @@ void free_sw::initialize()
     s_sndAck = registerSignal("sndACK");
     s_rcvNack = registerSignal("rcvNACK");
     s_sndNack = registerSignal("sndNACK");
+    s_queueTam = registerSignal("queueTam");
 
     WATCH(sent_seq);
     WATCH(state_machine);
@@ -159,50 +163,58 @@ void free_sw::handleMessage(cMessage *msg)
             inter_layer *pk = check_and_cast<inter_layer *>(msg);
             newPacket(pk);
             delete(pk);
+            emit(s_queueTam,txQueue->length());
         }
         else{
             EV << " Capa inferior";
             Packet *up = check_and_cast<Packet *>(msg);
             /*Paquete de la capa inferior*/
-            switch(up->getType()){
-            case t_nack_t:
-                /*nack*/
-                EV << " NACK";
-                /*reenviar*/
-                sendCopyOf(message);
-                emit(s_rcvNack,++rcvNack);
-                break;
-            case t_ack_t:
-                /*ack*/
-                EV << " ACK";
-                /*extraer secuencia y comprobar*/
-                int ack_seq;
-                ack_seq = up->getSeq();
-                if(ack_seq == sent_seq){
-                    /*ACK correcto*/
-                    /*comprobar cola*/
-                    if(txQueue->empty()){
-                        /*no hay mensajes, se espera otro*/
-                        state_machine = idle;
+            /*comprobar destinatario*/
+            if(up->getDestAddr()==origen){
+                /*destinatario correcto*/
+                switch(up->getType()){
+                case t_nack_t:
+                    /*nack*/
+                    EV << " NACK";
+                    /*reenviar*/
+                    sendCopyOf(message);
+                    emit(s_rcvNack,++rcvNack);
+                    break;
+                case t_ack_t:
+                    /*ack*/
+                    EV << " ACK";
+                    /*extraer secuencia y comprobar*/
+                    int ack_seq;
+                    ack_seq = up->getSeq();
+                    if(ack_seq == sent_seq){
+                        /*ACK correcto*/
+                        /*comprobar cola*/
+                        if(txQueue->empty()){
+                            /*no hay mensajes, se espera otro*/
+                            state_machine = idle;
+                        }
+                        else{
+                            /*sacar de cola y mandar*/
+                            Packet * sp  = (Packet *)txQueue->pop();
+                            send_pk(sp);
+                        }
+                        emit(s_rcvAck,++rcvAck);
                     }
-                    else{
-                        /*sacar de cola y mandar*/
-                        Packet * sp  = (Packet *)txQueue->pop();
-                        send_pk(sp);
-                    }
-                    emit(s_rcvAck,++rcvAck);
+                    /*Si el ACK no es el esperado se obvia*/
+                    break;
+                case t_msg_t:
+                    /*nuevo mensaje recivido*/
+                    EV << " Nuevo mensaje";
+                    arrivedPacket(up);
+                    break;
+                default:
+                    EV << " Default";
+                    arrivedPacket(up);
+                    break;
                 }
-                /*Si el ACK no es el esperado se obvia*/
-                break;
-            case t_msg_t:
-                /*nuevo mensaje recivido*/
-                EV << " Nuevo mensaje";
-                arrivedPacket(up);
-                break;
-            default:
-                EV << " Default";
-                arrivedPacket(up);
-                break;
+            }else{
+                /*destinatario erronea*/
+                bubble("Mensaje para otro");
             }
             delete(up);
         }

@@ -18,11 +18,14 @@ class free_gbn : public cSimpleModule
     /*gestion de secuencia*/
     int sent_seq,ack_seq;
     int rcv_seq;
+    cMessage * time;
     /*parámetros de paquete*/
     int header_tam;
     int ack_tam;
     int origen;
-    int destino;
+    int time_out;
+    int window_tam;
+    int queue_tam;
     /*variables de estadísticas*/
     int rcvAck;
     int sndAck;
@@ -38,6 +41,8 @@ class free_gbn : public cSimpleModule
     simsignal_t s_sndAck;
     simsignal_t s_rcvNack;
     simsignal_t s_sndNack;
+    simsignal_t s_queueTam;
+    simsignal_t s_sndWindow;
 
   public:
     free_gbn();
@@ -50,8 +55,8 @@ class free_gbn : public cSimpleModule
     virtual void rptQueue();
     virtual void arrivedPacket(Packet * pk);
     virtual void newPacket(inter_layer * pk);
-    virtual void send_Nack(int s_seq);
-    virtual void send_Ack(int s_seq);
+    virtual void send_Nack(int s_seq,int dest);
+    virtual void send_Ack(int s_seq,int dest);
     virtual void send_pk(Packet * pk);
     virtual void send_up(Packet * pk);
 };
@@ -65,11 +70,13 @@ free_gbn::free_gbn()
     sent_seq = 0;
     rcv_seq = 0;
     ack_seq = 0;
+    time = NULL;
     header_tam = 0;
     ack_tam = 1;
     origen = 0;
-    destino = 1;
     state_machine = idle;
+    queue_tam = -1;
+    window_tam = -1;
     /*colas*/
     txQueue = NULL;
     /*valores de control*/
@@ -82,6 +89,8 @@ free_gbn::free_gbn()
     s_sndAck = 0;
     s_rcvNack = 0;
     s_sndNack = 0;
+    s_queueTam = 0;
+    s_sndWindow = 0;
 
 }
 
@@ -90,21 +99,48 @@ free_gbn::~free_gbn()
 {
     txQueue->~cQueue();
     ackQueue->~cQueue();
+    cancelAndDelete(time);
 }
 
 /*Función de inicialización*/
 void free_gbn::initialize()
 {
-    ack_tam = par("ack_tam");
+    /*Parámetros*/
+        if(par("Addr").containsValue()){
+            origen  = par("Addr");
+        }
+
+        if(par("Header_Tam").containsValue()){
+            header_tam = par("Header_Tam");
+        }
+
+        if(par("Ack_Tam").containsValue()){
+            ack_tam = par("Ack_Tam");
+        }
+
+        if(par("Time_Out").containsValue()){
+            time_out = par("Time_Out");
+        }
+
+        if(par("Queue_Tam").containsValue()){
+            queue_tam = par("Queue_Tam");
+        }
+        if(par("Window_Tam").containsValue()){
+            window_tam = par("Window_Tam");
+        }
     /*Cola de mensajes a enviar*/
     txQueue = new cQueue("txQueue");
     ackQueue = new cQueue("ackQueue");
+
+    time = new cMessage("time_out",0);
 
     /*suscribir señales*/
     s_rcvAck = registerSignal("rcvACK");
     s_sndAck = registerSignal("sndACK");
     s_rcvNack = registerSignal("rcvNACK");
     s_sndNack = registerSignal("sndNACK");
+    s_queueTam = registerSignal("queueTam");
+    s_sndWindow = registerSignal("sndWindow");
 
     WATCH(sent_seq);
     WATCH(ack_seq);
@@ -119,6 +155,11 @@ void free_gbn::initialize()
 /*Recepción de mensajes*/
 void free_gbn::handleMessage(cMessage *msg)
 {
+    /*comprobar si es el propio*/
+    if(msg == time){
+        /*reenvio*/
+        rptQueue();
+    }
     EV << "Handle Message";
     if(msg->arrivedOn("up_in")){
         /*paquete de la capa superior*/
@@ -209,13 +250,13 @@ void free_gbn::newPacket(inter_layer *pk){
     /*Mensaje de la capa superior extraer origen y destino y el cuerpo*/
     EV << " New Packet";
     //int og = pk -> getOrigen();
-    //int ds = pk -> getDestino();
+    int ds = pk -> getDestino();
     cPacket *body = (cPacket *) pk->decapsulate();
 
     /*Crear el paquete y encapsular*/
     Packet * sp = new Packet("free_gbn",0);
     sp->setSrcAddr(origen);
-    sp->setDestAddr(destino);
+    sp->setDestAddr(ds);
     sp->setBitLength(header_tam);
     sp->encapsulate(body);
 
@@ -234,6 +275,7 @@ void free_gbn::arrivedPacket(Packet *pk){
     /*recivido nuevo mensaje externo*/
     EV << " Arrived Packet";
     int r_seq = pk->getSeq();
+    int dest = pk->getSrcAddr();
     if (pk->hasBitError())
     {
         EV << " Con error";
@@ -241,7 +283,7 @@ void free_gbn::arrivedPacket(Packet *pk){
         bubble("message error");
         if(r_seq==(rcv_seq+1)){
             //el que se esperaba
-            send_Nack(r_seq);
+            send_Nack(r_seq,dest);
         }
         /*Si es menor ya se ha recivido correctametne y se obvia*/
         /*Si es mayor que el esperado se obvia*/
@@ -252,17 +294,17 @@ void free_gbn::arrivedPacket(Packet *pk){
          /*paquete sin errores comprobar secuencia*/
          if(r_seq==(rcv_seq+1)){
             //paquete correcto (secuencia esperada)
-            send_Ack(++rcv_seq);
+            send_Ack(++rcv_seq,dest);
             send_up(pk);
             /*VIEJO*/
         }else {
             /*En caso de recivir una secuencia menor o mayor se envia un ACK de la última (ACK acumulado)*/
-            send_Ack(rcv_seq);
+            send_Ack(rcv_seq,dest);
         }
      }
 }
 
-void free_gbn::send_Nack(int s_seq){
+void free_gbn::send_Nack(int s_seq,int dest){
     /*crear el Packet NACK el inter_layer y mandarlo*/
     EV << " Send Nack";
 
@@ -274,7 +316,7 @@ void free_gbn::send_Nack(int s_seq){
     pkt->setType(t_nack_t);
     pkt->setSeq(s_seq);
     pkt->setSrcAddr(origen);
-    pkt->setDestAddr(destino);
+    pkt->setDestAddr(dest);
 
     /*preparar el inter layer y mandarlo*/
     sprintf(msgname,"il_free_gbn_NACK-%d",s_seq);
@@ -289,7 +331,7 @@ void free_gbn::send_Nack(int s_seq){
     emit(s_sndNack,++sndNack);
 }
 
-void free_gbn::send_Ack(int s_seq)
+void free_gbn::send_Ack(int s_seq, int dest)
 {
     EV << " Send Ack";
     /*crear el Packet NACK el inter_layer y mandarlo*/
@@ -302,7 +344,7 @@ void free_gbn::send_Ack(int s_seq)
     pkt->setType(t_ack_t);
     pkt->setSeq(s_seq);
     pkt->setSrcAddr(origen);
-    pkt->setDestAddr(destino);
+    pkt->setDestAddr(dest);
 
     /*preparar el inter layer y mandarlo*/
     sprintf(msgname,"il_free_gbn_ACK-%d",s_seq);

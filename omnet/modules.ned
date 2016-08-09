@@ -18,22 +18,22 @@ simple fisico
 {
     parameters:
         @display("i=block/ifcard");
-        
+
         @signal[rcvBit](type="int");
         @statistic[rcv_Bit](title="rcvBit"; source="rcvBit"; record=vector);
-        
+
         @signal[rcvPkt](type="int");
         @statistic[rcv_Pkt](title="rcvPkt"; source="rcvPkt"; record=vector);
-        
+
         @signal[sndBit](type="int");
-        @statistic[rcv_Bit](title="rcvBit"; source="rcvBit"; record=vector);
-        
+        @statistic[snd_Bit](title="sndBit"; source="sndBit"; record=vector);
+
         @signal[sndPkt](type="int");
-        @statistic[rcv_Pkt](title="rcvPkt"; source="rcvPkt"; record=vector);
-        
+        @statistic[snd_Pkt](title="sndPkt"; source="sndPkt"; record=vector);
+
         @signal[lostPkt](type="int");
         @statistic[lost_Pkt](title="lostPkt"; source="lostPkt"; record=vector);
-        
+
         @signal[errorPkt](type="int");
         @statistic[error_Pkt](title="errorPkt"; source="errorPkt"; record=vector);
 
@@ -50,7 +50,7 @@ simple free_sw
 {
     parameters:
         @display("i=block/queue");
-        
+
         int Addr = default(0);
         int Header_Tam = default(0);
         int Ack_Tam = default(1);
@@ -68,18 +68,27 @@ simple free_sw
 
         @signal[sndNACK](type="int");
         @statistic[snd_NACK](title="sndNACK"; source="sndNACK"; record=vector);
+
+        @signal[queueTam](type="int");
+        @signal[queue_Tam](title="queueTam"; source="queueTam"; record=vector);
+
     gates:
         output down_out;
         input down_in;
-        output up_out;
-        input up_in;
+        output up_out @loose;
+        input up_in @loose;
 }
 
 simple free_gbn
 {
     parameters:
-        int ack_tam = default(1)
-        
+        int Addr = default(0);
+        int Header_Tam = default(0);
+        int Ack_Tam = default(1);
+        int Queue_Tam = default(-1);
+        int Window_Tam = default(-1);
+        int Time_Out = default(300);
+
         @display("i=block/queue");
 
         @signal[rcvACK](type="int");
@@ -93,11 +102,18 @@ simple free_gbn
 
         @signal[sndNACK](type="int");
         @statistic[snd_NACK](title="sndNACK"; source="sndNACK"; record=vector);
+
+        @signal[queueTam](type="int");
+        @signal[queue_Tam](title="queueTam"; source="queueTam"; record=vector);
+
+        @signal[sndWindow](type="int");
+        @signal[snd_Window](title="sndWindow"; source="sndWindow"; record=vector);
+
     gates:
         output down_out;
         input down_in;
-        output up_out;
-        input up_in;
+        output up_out @loose;
+        input up_in @loose;
 }
 
 simple injector
@@ -112,7 +128,6 @@ simple injector
         @display("i=block/source");
     gates:
         output down_out;
-        input down_in;
 }
 
 simple dump
@@ -121,37 +136,79 @@ simple dump
         @display("i=block/sink");
 
         @signal[rcvBit](type="double");
-        @statistic[rcv_bit](title="rcvBit"; source="rcvBit"; record=vector);        
-        
+        @statistic[rcv_bit](title="rcvBit"; source="rcvBit"; record=vector);
+
         @signal[rcvPkt](type="int");
         @statistic[rcv_Pkt](title="rcvPkt"; source="rcvPkt"; record=vector);
+        
+        @signal[bitThroughput](type="long");
+        @statistic[bit_Throughput](title="bitThroughput"; source="bitThroughput"; record=vector);
+        
+        @signal[pktThroughput](type="long");
+        @statistic[pkt_Throughput](title="pktThroughput"; source="pktThroughput"; record=vector);
     gates:
-        output down_out;
         input down_in;
 }
 
 simple senderSW
 {
     parameters:
-        int Addr = default(0);
-        int Header_Tam = default(0);
-        
+
         @signal[rcvACK](type="int");
         @statistic[rcv_ACK](title="rcvACK"; source="rcvACK"; record=vector);
-        
+
         @signal[rcvNACK](type="int");
         @statistic[rcv_NACK](title="rcvNACK"; source="rcvNACK"; record=vector);
-        
+
         @signal[QueueState](type="int");
         @statistic[Queue_State](title="QueueState"; source="QueueState"; record=vector);
-        
+
         @display("i=block/queue");
-        
+
     gates:
-        input up_in;
-        output up_out;
+        input pkt;
         input in;
         output out;
+}
+
+simple senderGBN
+{
+    parameters:
+
+        @signal[rcvACK](type="int");
+        @statistic[rcv_ACK](title="rcvACK"; source="rcvACK"; record=vector);
+
+        @signal[rcvNACK](type="int");
+        @statistic[rcv_NACK](title="rcvNACK"; source="rcvNACK"; record=vector);
+
+        @signal[QueueState](type="int");
+        @statistic[Queue_State](title="QueueState"; source="QueueState"; record=vector);
+
+        @display("i=block/queue");
+
+    gates:
+        input pkt;
+        input in;
+        output out;
+}
+
+simple receiverACK
+{
+    parameters:
+        @signal[sndACK](type="int");
+        @statistic[snd_ACK](title="sndACK"; source="sndACK"; record=vector);
+
+        @signal[sndNACK](type="int");
+        @statistic[snd_NACK](title="sndNACK"; source="sndNACK"; record=vector);
+
+        int Ack_Tam = default(1);
+
+        @display("i=block/arrival");
+    gates:
+        input in;
+        output out;
+        output up;
+
 }
 
 simple mux

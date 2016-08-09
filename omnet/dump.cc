@@ -27,6 +27,8 @@ private:
     /*señal para extraer datos*/
     simsignal_t s_rcvBit;
     simsignal_t s_rcvPkt;
+    simsignal_t s_bitThroughput;
+    simsignal_t s_pktThroughput;
 public:
     dump();
     virtual ~dump();
@@ -45,6 +47,8 @@ dump::dump() {
 
     s_rcvBit = 0;
     s_rcvPkt = 0;
+    s_bitThroughput = 0;
+    s_pktThroughput = 0;
 }
 
 dump::~dump() {
@@ -54,6 +58,8 @@ dump::~dump() {
 void dump::initialize(){
     s_rcvBit = registerSignal("rcvBit");
     s_rcvPkt = registerSignal("rcvPkt");
+    s_bitThroughput = registerSignal("bitThroughput");
+    s_pktThroughput = registerSignal("pktThroughput");
 
    WATCH (count);
 }
@@ -61,10 +67,12 @@ void dump::initialize(){
 void dump::handleMessage(cMessage *msg){
     cPacket *pk = check_and_cast<cPacket *>(msg);
     tam += pk->getBitLength();
+    SimTime time = simTime();
     delete(pk);
     emit(s_rcvBit,tam);
     emit(s_rcvPkt,++count);
-
+    emit(s_bitThroughput,tam/time);
+    emit(s_pktThroughput,count/time);
 }
 
 

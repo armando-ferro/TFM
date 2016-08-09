@@ -16,26 +16,28 @@ network StopAndWait
         injector: injector {
             @display("p=45,33");
             Time_Distribution = "exp";
+            Dst_Addr = 1;
         }
         sw: free_sw {
             @display("p=45,107");
+            Addr = 0;
         }
         fisico: fisico {
-            @display("p=48,190");
+            @display("p=45,190");
             Queue_Length = 20;
         }
         fisico1: fisico {
             @display("p=539,190");
         }
         sw1: free_sw {
-            @display("p=539,117");
+            @display("p=539,107");
+            Addr = 1;
         }
         dump: dump {
-            @display("p=539,50");
+            @display("p=539,33");
         }
     connections:
         injector.down_out --> sw.up_in;
-        sw.up_out --> injector.down_in;
 
         sw.down_out --> fisico.up_in;
         fisico.up_out --> sw.down_in;
@@ -47,7 +49,5 @@ network StopAndWait
         fisico1.out --> C --> fisico.in;
 
         sw1.up_out --> dump.down_in;
-        dump.down_out --> sw1.up_in;
-
 
 }

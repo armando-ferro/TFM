@@ -40,14 +40,13 @@ network Pruebas
         }
         gbn1: free_gbn {
             @display("p=539,117");
-            ack_tam = 1;
+            Ack_Tam = 1;
         }
         dump: dump {
             @display("p=539,50");
         }
     connections:
-        injector.down_out --> senderSW.up_in;
-        senderSW.up_out --> injector.down_in;
+        injector.down_out --> senderSW.pkt;
         
         senderSW.out --> C --> fisico1.in;
         fisico1.out --> C --> senderSW.in;
@@ -56,7 +55,5 @@ network Pruebas
         fisico1.up_out --> gbn1.down_in;
 
         gbn1.up_out --> dump.down_in;
-        dump.down_out --> gbn1.up_in;
-
 
 }
