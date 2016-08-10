@@ -124,6 +124,10 @@ simple injector
         string Time_Distribution = default("cte");
         string Size_Distribution = default("cte");
         int Dst_Addr = default(0);
+        int n_Pkt = default(-1)
+        
+        @signal[pktTam](type=int);
+        @statistic[pkt_tam](title="pktTam"; source="pktTam"; record=vector);
 
         @display("i=block/source");
     gates:
@@ -183,6 +187,9 @@ simple senderGBN
 
         @signal[QueueState](type="int");
         @statistic[Queue_State](title="QueueState"; source="QueueState"; record=vector);
+        
+        @signal[WindowTam](type="int");
+        @statistic[Window_Tam](title="WindowTam"; source="WindowTam"; record=vector);
 
         @display("i=block/queue");
 

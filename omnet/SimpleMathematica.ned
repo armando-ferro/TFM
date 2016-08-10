@@ -30,9 +30,10 @@ network MathematicaSW
             @display("p=45,33");
             Time_Distribution = "exp";
             Size_Distribution = "exp";
-            Mean_Time = 30;
-            Mean_Size = 70;
+            Mean_Time = 1;
+            Mean_Size = 10;
             Dst_Addr = 1;
+            n_Pkt = 1000;
         }
         senderSW: senderSW {
             @display("p=45,107");
@@ -69,9 +70,10 @@ network MathematicaGBN
             @display("p=45,33");
             Time_Distribution = "exp";
             Size_Distribution = "exp";
-            Mean_Time = 30;
-            Mean_Size = 70;
+            Mean_Time = 1;
+            Mean_Size = 10;
             Dst_Addr = 1;
+            n_Pkt = 1000;
         }
         senderGBN: senderGBN {
             @display("p=45,107");

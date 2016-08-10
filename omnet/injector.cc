@@ -31,6 +31,9 @@ private:
     std::string time_distribution;
     std::string pkt_distribution;
     int pkt_mean;
+    int n_pkt;
+    /*señales*/
+    simsignal_t s_pktTam;
 public:
     injector();
     virtual ~injector();
@@ -52,6 +55,8 @@ injector::injector() {
     pkt_mean = 2;
     seq = 0;
     dest = 0;
+    s_pktTam = 0;
+    n_pkt = -1;
 
 }
 
@@ -65,7 +70,10 @@ void injector::initialize(){
     time_distribution = par("Time_Distribution").stdstringValue();
     pkt_distribution = par("Size_Distribution").stdstringValue();
     dest = par("Dst_Addr");
+    n_pkt = par("n_Pkt");
     seq = 0;
+
+    s_pktTam = registerSignal("pktTam");
 
     nextPkt = new cMessage("new");
     if(time_distribution.compare("exp")==0){
@@ -79,19 +87,21 @@ void injector::initialize(){
 }
 
 void injector::handleMessage(cMessage *msg){
-    Packet *pkt = generateNewMessage();
-    /*Generar el inter_layer y mandarlo*/
-    inter_layer * il = new inter_layer("injector_il",0);
-    il->setDestino(dest);
-    il->encapsulate(pkt);
-    send(il,"down_out");
-    //scheduleAt(simTime()+exponential(time_mean),nextPkt);
-    if(time_distribution.compare("exp")==0){
-        /*exponencial*/
-        scheduleAt(simTime()+exponential(time_mean),nextPkt);
-    }else{
-        /*constante*/
-        scheduleAt(simTime()+(time_mean),nextPkt);
+    if(seq<n_pkt||n_pkt<0){
+        Packet *pkt = generateNewMessage();
+        /*Generar el inter_layer y mandarlo*/
+        inter_layer * il = new inter_layer("injector_il",0);
+        il->setDestino(dest);
+        il->encapsulate(pkt);
+        send(il,"down_out");
+        //scheduleAt(simTime()+exponential(time_mean),nextPkt);
+        if(time_distribution.compare("exp")==0){
+            /*exponencial*/
+            scheduleAt(simTime()+exponential(time_mean),nextPkt);
+        }else{
+            /*constante*/
+            scheduleAt(simTime()+(time_mean),nextPkt);
+        }
     }
 }
 
@@ -105,12 +115,15 @@ Packet *injector::generateNewMessage(){
         int tam = exponential(pkt_mean);
             if(tam == 0){
                 msg->setBitLength(1);
+                emit(s_pktTam,1);
             }else{
                 msg->setBitLength(tam);
+                emit(s_pktTam,tam);
             }
         }else{
             /*constante*/
             msg->setBitLength(pkt_mean);
+            emit(s_pktTam,pkt_mean);
         }
 
     msg->setType(a_msg_t);

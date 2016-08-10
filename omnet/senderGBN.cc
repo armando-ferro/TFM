@@ -27,7 +27,7 @@ const short idle = 0;
 const short sending_i = 1;
 const short sending_r = 2;
 
-class SenderGBN : public cSimpleModule{
+class senderGBN : public cSimpleModule{
 private:
     int sent_seq,ack_seq,rpt_seq;
     int rpt_total;  //total packege to repeat after nack
@@ -36,6 +36,7 @@ private:
     simsignal_t s_queueState;
     simsignal_t s_rcvAck;
     simsignal_t s_rcvNack;
+    simsignal_t s_windowTam;
     /*Mensaje para enviarse a si mismo al terminar de enviar un paquete*/
     cMessage *sent;
     /*Canal*/
@@ -46,8 +47,8 @@ private:
     /*Maquina de estados y estado*/
     short state_machine;
 public:
-    SenderGBN();
-    virtual ~SenderGBN();
+    senderGBN();
+    virtual ~senderGBN();
 
 protected:
     virtual void sendCopyOf(Packet *msg);
@@ -57,9 +58,9 @@ protected:
     virtual void startRetrasmision();
 };
 
-Define_Module(SenderGBN);
+Define_Module(senderGBN);
 
-SenderGBN::SenderGBN() {
+senderGBN::senderGBN() {
     /*constructor*/
     ack_seq = 0;
     sent_seq= 0;
@@ -76,9 +77,10 @@ SenderGBN::SenderGBN() {
     s_rcvAck = 0;
     s_rcvNack = 0;
     s_queueState = 0;
+    s_windowTam = 0;
 }
 
-SenderGBN::~SenderGBN() {
+senderGBN::~senderGBN() {
     /*Destructor*/
     cancelAndDelete(sent);
     txQueue->~cQueue();
@@ -86,10 +88,11 @@ SenderGBN::~SenderGBN() {
 
 }
 
-void SenderGBN::initialize(){
+void senderGBN::initialize(){
     s_queueState = registerSignal("QueueState");
     s_rcvAck = registerSignal("rcvACK");
     s_rcvNack = registerSignal("rcvNACK");
+    s_windowTam = registerSignal("WindowTam");
 
     /*Inicializar variables*/
     txChannel = gate("out")->getTransmissionChannel();
@@ -105,7 +108,7 @@ void SenderGBN::initialize(){
 
 }
 
-void SenderGBN::handleMessage(cMessage *msg){
+void senderGBN::handleMessage(cMessage *msg){
     EV << "MENSAJE: ";
     if(msg == sent){
         EV << " Propio. ";
@@ -161,6 +164,7 @@ void SenderGBN::handleMessage(cMessage *msg){
             inter_layer *il = check_and_cast<inter_layer *>(msg);
             Packet *up = (Packet *)il->decapsulate();
             emit(s_queueState,txQueue->length());
+            emit(s_windowTam,(sent_seq-ack_seq));
             EV << " Message nuevo. ";
             /*llega un paquete nuevo*/
             if(state_machine == idle){
@@ -172,6 +176,7 @@ void SenderGBN::handleMessage(cMessage *msg){
                 /*se almacena el mensaje en la cola*/
                 txQueue->insert(up);
             }
+            delete(il);
         }else{
             /*Comprobar si es un ACK o un NACK*/
             Packet *pk = check_and_cast<Packet *>(msg);
@@ -225,7 +230,7 @@ void SenderGBN::handleMessage(cMessage *msg){
     }
 }
 
-void SenderGBN::startRetrasmision(){
+void senderGBN::startRetrasmision(){
     /*Iniciar los parámetros de la retrasmisión*/
     rpt_total = sent_seq - ack_seq;
     rpt_seq = 0;
@@ -239,7 +244,7 @@ void SenderGBN::startRetrasmision(){
     state_machine = sending_r;
 }
 
-Packet *SenderGBN::getPacket(Packet *msg){
+Packet *senderGBN::getPacket(Packet *msg){
     EV << " generando secuencia";
     /*Función al enviar un nuevo paquete, adaptarlo y mandarlo al código*/
     msg->setSeq(++sent_seq);
@@ -247,7 +252,7 @@ Packet *SenderGBN::getPacket(Packet *msg){
     return msg;
 }
 
-void SenderGBN::sendCopyOf(Packet *msg)
+void senderGBN::sendCopyOf(Packet *msg)
 {
     EV << " Enviando mensaje";
     /*Duplicar el mensaje y mandar una copia*/

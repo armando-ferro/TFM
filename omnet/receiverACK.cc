@@ -76,7 +76,7 @@ void receiverACK::handleMessage(cMessage *msg){
         }
         /*Si es menor ya se ha recivido correctametne y se obvia*/
         /*Si es mayor que el esperado se obvia*/
-        delete(msg);
+        delete(pk);
      }
      else
      {
@@ -98,7 +98,7 @@ void receiverACK::handleMessage(cMessage *msg){
             pkt->setSeq(seq);
             send(pkt, "out");
             emit(s_sndAck,++sndAck);
-
+            delete(pk);
         }
         /*En caso de que el paquete llega desordenado (un sequencia mayor), se obvia*/
      }
