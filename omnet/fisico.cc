@@ -17,7 +17,8 @@
 #include <omnetpp.h>
 #include <simtime.h>
 #include "Inter_Layer_m.h"
-#include "Packet_m.h"
+#include "Link_m.h"
+#include "Types.h"
 
 /*Estados*/
 const short idle = 0;
@@ -56,6 +57,7 @@ protected:
   virtual void initialize();
   virtual void handleMessage(cMessage *msg);
   virtual void send_out(cPacket *pk);
+  virtual void send_up(cPacket *pk);
 };
 
 // The module class needs to be registered with OMNeT++
@@ -144,6 +146,7 @@ void fisico::handleMessage(cMessage *msg){
             if(rx->hasEncapsulatedPacket()){
                 pk = rx->decapsulate();
             }else{
+                delete(rx);
                 return;
             }
             if(state_machine == idle){
@@ -160,6 +163,7 @@ void fisico::handleMessage(cMessage *msg){
                         sprintf(msgname,"cola llena-%d",max_state);
                         bubble(msgname);
                         delete(pk);
+                        emit(s_lostPkt,++lostPkt);
                     }else{
                         /*todavía hay sitio*/
                         txQueue->insert(pk);
@@ -172,20 +176,24 @@ void fisico::handleMessage(cMessage *msg){
             }
             delete(rx);
         }else{
-            /*externo, comprobar eror, desencapsular y subir a la capa superior*/
-            Packet * rxp = check_and_cast<Packet *>(msg);
+            /*externo, comprobar eror y tipo, desencapsular y subir a la capa superior*/
+            Link * rxp = check_and_cast<Link *>(msg);
             if(rxp->hasBitError()){
                 bubble("Paquete con error");
                 emit(s_errorPkt,++errorPkt);
                 delete(rxp);
             }else{
+                if(rxp->getType()!=e_msg_t){
+                    bubble("Tipo erróneo");
+                    delete(rxp);
+                }
                 if(rxp->hasEncapsulatedPacket()){
-                    Packet *data = (Packet *) rxp->decapsulate();
+                    cPacket *data = (cPacket *) rxp->decapsulate();
                     int tam = data->getBitLength();
                     rcvBit += tam;
                     emit(s_rcvBit,rcvBit);
                     emit(s_rcvPkt,++rcvPkt);
-                    send(data,"up_out");
+                    send_up(data);
                 }else{
                     bubble("Paquete inesperado");
                 }
@@ -202,9 +210,12 @@ void fisico::send_out(cPacket * pk){
     sndBit += tam;
     char msgname[20];
     sprintf(msgname,"fisico-%d",++sndPkt);
-    Packet  *rx = new Packet(msgname,0);
+    Link  *rx = new Link(msgname,0);
     rx->setBitLength(header_tam);
     rx->encapsulate(pk);
+    /*llenar cabecera*/
+    rx->setType(e_msg_t);
+    rx->setSeq(sndPkt);
     /*enviar por out*/
     send(rx,"out");
     state_machine = sending;
@@ -213,4 +224,13 @@ void fisico::send_out(cPacket * pk){
     scheduleAt(txFinishTime,sent);
     emit(s_sndBit,sndBit);
     emit(s_sndPkt,sndPkt);
+}
+
+void fisico::send_up(cPacket *pk){
+    /*encapsular con la información*/
+    inter_layer *il = new inter_layer("fisicoUP",0);
+    il->encapsulate(pk);
+
+    send(il,"up_out");
+
 }

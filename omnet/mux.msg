@@ -9,14 +9,10 @@
 
 
 //
-// Represents a packet in the network.
+// Represents a packet in the multiplexed network
 //
-packet Packet
-{
-    unsigned int type;
-    unsigned int seq;
-    unsigned int tam;
-    double interTime;
-    
-}
 
+packet Mux
+{
+    short line;
+}

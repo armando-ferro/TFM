@@ -17,7 +17,7 @@
 #include <string.h>
 #include <omnetpp.h>
 #include "Types.h"
-#include "Packet_m.h"
+#include "Aplication_m.h"
 #include "Inter_layer_m.h"
 
 
@@ -26,11 +26,8 @@ private:
     cMessage *nextPkt;
     int seq;
     int dest;
+    double delay;
     /*Valores introducidos por el usuario que no se modificarán*/
-    SimTime time_mean;
-    std::string time_distribution;
-    std::string pkt_distribution;
-    int pkt_mean;
     int n_pkt;
     /*señales*/
     simsignal_t s_pktTam;
@@ -39,7 +36,7 @@ public:
     virtual ~injector();
 protected:
     virtual void handleMessage(cMessage *msg);
-    virtual Packet *generateNewMessage();
+    virtual Aplication *generateNewMessage();
     virtual void initialize();
 
 };
@@ -49,10 +46,6 @@ Define_Module(injector);
 
 injector::injector() {
     nextPkt = NULL;
-    time_distribution = "cte";
-    pkt_distribution = "cte";
-    time_mean = 10;
-    pkt_mean = 2;
     seq = 0;
     dest = 0;
     s_pktTam = 0;
@@ -65,67 +58,54 @@ injector::~injector() {
 }
 
 void injector::initialize(){
-    time_mean = par("Mean_Time");
-    pkt_mean = par("Mean_Size");
-    time_distribution = par("Time_Distribution").stdstringValue();
-    pkt_distribution = par("Size_Distribution").stdstringValue();
-    dest = par("Dst_Addr");
-    n_pkt = par("n_Pkt");
+
+    if(par("Dst_Addr").containsValue()){
+        dest = par("Dst_Addr");
+    }
+
+    if(par("n_Pkt").containsValue()){
+        n_pkt = par("n_Pkt");
+    }
+
     seq = 0;
 
     s_pktTam = registerSignal("pktTam");
 
     nextPkt = new cMessage("new");
-    if(time_distribution.compare("exp")==0){
-        /*exponencial*/
-        scheduleAt(simTime()+exponential(time_mean),nextPkt);
-    }else{
-        /*constante*/
-        scheduleAt(simTime()+(time_mean),nextPkt);
-    }
+    delay = par("delayTime");
+    scheduleAt(simTime()+delay, nextPkt);
 
 }
 
 void injector::handleMessage(cMessage *msg){
     if(seq<n_pkt||n_pkt<0){
-        Packet *pkt = generateNewMessage();
+        Aplication *pkt = generateNewMessage();
         /*Generar el inter_layer y mandarlo*/
         inter_layer * il = new inter_layer("injector_il",0);
         il->setDestino(dest);
         il->encapsulate(pkt);
         send(il,"down_out");
-        //scheduleAt(simTime()+exponential(time_mean),nextPkt);
-        if(time_distribution.compare("exp")==0){
-            /*exponencial*/
-            scheduleAt(simTime()+exponential(time_mean),nextPkt);
-        }else{
-            /*constante*/
-            scheduleAt(simTime()+(time_mean),nextPkt);
-        }
+        delay = par("delayTime");
+        scheduleAt(simTime()+delay, nextPkt);
     }
 }
 
-Packet *injector::generateNewMessage(){
+Aplication *injector::generateNewMessage(){
     /*Generar un paquete con distinto nombre cada vez*/
     char msgname[20];
     sprintf(msgname,"tic-%d",++seq);
-    Packet *msg = new Packet(msgname,0);
-    if(pkt_distribution.compare("exp")==0){
-            /*exponencial*/
-        int tam = exponential(pkt_mean);
-            if(tam == 0){
-                msg->setBitLength(1);
-                emit(s_pktTam,1);
-            }else{
-                msg->setBitLength(tam);
-                emit(s_pktTam,tam);
-            }
-        }else{
-            /*constante*/
-            msg->setBitLength(pkt_mean);
-            emit(s_pktTam,pkt_mean);
-        }
+    Aplication *msg = new Aplication(msgname,0);
 
-    msg->setType(a_msg_t);
+    int tam = par("pktSize");
+    if(tam<=0){
+        tam = 1;
+    }
+    emit(s_pktTam,tam);
+    msg->setBitLength(tam);
+
+    double it = delay;
+
+    msg->setTam(tam);
+    msg->setInterTime(it);
     return msg;
 }

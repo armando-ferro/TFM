@@ -1,9 +1,9 @@
 //
-// Generated file, do not edit! Created by nedtool 4.6 from Packet.msg.
+// Generated file, do not edit! Created by nedtool 4.6 from Aplication.msg.
 //
 
-#ifndef _PACKET_M_H_
-#define _PACKET_M_H_
+#ifndef _APLICATION_M_H_
+#define _APLICATION_M_H_
 
 #include <omnetpp.h>
 
@@ -16,48 +16,43 @@
 
 
 /**
- * Class generated from <tt>Packet.msg:15</tt> by nedtool.
+ * Class generated from <tt>Aplication.msg:5</tt> by nedtool.
  * <pre>
  * //
- * // Represents a packet in the network.
+ * // Represents a packet in the network. Aplication layer packet
  * //
- * packet Packet
+ * packet Aplication
  * {
- *     unsigned int type;
  *     unsigned int seq;
  *     unsigned int tam;
  *     double interTime;
- * 
  * }
  * </pre>
  */
-class Packet : public ::cPacket
+class Aplication : public ::cPacket
 {
   protected:
-    unsigned int type_var;
     unsigned int seq_var;
     unsigned int tam_var;
     double interTime_var;
 
   private:
-    void copy(const Packet& other);
+    void copy(const Aplication& other);
 
   protected:
     // protected and unimplemented operator==(), to prevent accidental usage
-    bool operator==(const Packet&);
+    bool operator==(const Aplication&);
 
   public:
-    Packet(const char *name=NULL, int kind=0);
-    Packet(const Packet& other);
-    virtual ~Packet();
-    Packet& operator=(const Packet& other);
-    virtual Packet *dup() const {return new Packet(*this);}
+    Aplication(const char *name=NULL, int kind=0);
+    Aplication(const Aplication& other);
+    virtual ~Aplication();
+    Aplication& operator=(const Aplication& other);
+    virtual Aplication *dup() const {return new Aplication(*this);}
     virtual void parsimPack(cCommBuffer *b);
     virtual void parsimUnpack(cCommBuffer *b);
 
     // field getter/setter methods
-    virtual unsigned int getType() const;
-    virtual void setType(unsigned int type);
     virtual unsigned int getSeq() const;
     virtual void setSeq(unsigned int seq);
     virtual unsigned int getTam() const;
@@ -66,9 +61,9 @@ class Packet : public ::cPacket
     virtual void setInterTime(double interTime);
 };
 
-inline void doPacking(cCommBuffer *b, Packet& obj) {obj.parsimPack(b);}
-inline void doUnpacking(cCommBuffer *b, Packet& obj) {obj.parsimUnpack(b);}
+inline void doPacking(cCommBuffer *b, Aplication& obj) {obj.parsimPack(b);}
+inline void doUnpacking(cCommBuffer *b, Aplication& obj) {obj.parsimUnpack(b);}
 
 
-#endif // ifndef _PACKET_M_H_
+#endif // ifndef _APLICATION_M_H_
 

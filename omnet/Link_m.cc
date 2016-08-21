@@ -1,5 +1,5 @@
 //
-// Generated file, do not edit! Created by nedtool 4.6 from Packet.msg.
+// Generated file, do not edit! Created by nedtool 4.6 from Link.msg.
 //
 
 // Disable warnings about unused variables, empty switch stmts, etc:
@@ -10,7 +10,7 @@
 
 #include <iostream>
 #include <sstream>
-#include "Packet_m.h"
+#include "Link_m.h"
 
 USING_NAMESPACE
 
@@ -53,26 +53,24 @@ inline std::ostream& operator<<(std::ostream& out, const std::vector<T,A>& vec)
 template<typename T>
 inline std::ostream& operator<<(std::ostream& out,const T&) {return out;}
 
-Register_Class(Packet);
+Register_Class(Link);
 
-Packet::Packet(const char *name, int kind) : ::cPacket(name,kind)
+Link::Link(const char *name, int kind) : ::cPacket(name,kind)
 {
-    this->type_var = 0;
     this->seq_var = 0;
-    this->tam_var = 0;
-    this->interTime_var = 0;
+    this->type_var = 0;
 }
 
-Packet::Packet(const Packet& other) : ::cPacket(other)
+Link::Link(const Link& other) : ::cPacket(other)
 {
     copy(other);
 }
 
-Packet::~Packet()
+Link::~Link()
 {
 }
 
-Packet& Packet::operator=(const Packet& other)
+Link& Link::operator=(const Link& other)
 {
     if (this==&other) return *this;
     ::cPacket::operator=(other);
@@ -80,77 +78,51 @@ Packet& Packet::operator=(const Packet& other)
     return *this;
 }
 
-void Packet::copy(const Packet& other)
+void Link::copy(const Link& other)
 {
-    this->type_var = other.type_var;
     this->seq_var = other.seq_var;
-    this->tam_var = other.tam_var;
-    this->interTime_var = other.interTime_var;
+    this->type_var = other.type_var;
 }
 
-void Packet::parsimPack(cCommBuffer *b)
+void Link::parsimPack(cCommBuffer *b)
 {
     ::cPacket::parsimPack(b);
-    doPacking(b,this->type_var);
     doPacking(b,this->seq_var);
-    doPacking(b,this->tam_var);
-    doPacking(b,this->interTime_var);
+    doPacking(b,this->type_var);
 }
 
-void Packet::parsimUnpack(cCommBuffer *b)
+void Link::parsimUnpack(cCommBuffer *b)
 {
     ::cPacket::parsimUnpack(b);
-    doUnpacking(b,this->type_var);
     doUnpacking(b,this->seq_var);
-    doUnpacking(b,this->tam_var);
-    doUnpacking(b,this->interTime_var);
+    doUnpacking(b,this->type_var);
 }
 
-unsigned int Packet::getType() const
-{
-    return type_var;
-}
-
-void Packet::setType(unsigned int type)
-{
-    this->type_var = type;
-}
-
-unsigned int Packet::getSeq() const
+unsigned int Link::getSeq() const
 {
     return seq_var;
 }
 
-void Packet::setSeq(unsigned int seq)
+void Link::setSeq(unsigned int seq)
 {
     this->seq_var = seq;
 }
 
-unsigned int Packet::getTam() const
+unsigned int Link::getType() const
 {
-    return tam_var;
+    return type_var;
 }
 
-void Packet::setTam(unsigned int tam)
+void Link::setType(unsigned int type)
 {
-    this->tam_var = tam;
+    this->type_var = type;
 }
 
-double Packet::getInterTime() const
-{
-    return interTime_var;
-}
-
-void Packet::setInterTime(double interTime)
-{
-    this->interTime_var = interTime;
-}
-
-class PacketDescriptor : public cClassDescriptor
+class LinkDescriptor : public cClassDescriptor
 {
   public:
-    PacketDescriptor();
-    virtual ~PacketDescriptor();
+    LinkDescriptor();
+    virtual ~LinkDescriptor();
 
     virtual bool doesSupport(cObject *obj) const;
     virtual const char *getProperty(const char *propertyname) const;
@@ -169,34 +141,34 @@ class PacketDescriptor : public cClassDescriptor
     virtual void *getFieldStructPointer(void *object, int field, int i) const;
 };
 
-Register_ClassDescriptor(PacketDescriptor);
+Register_ClassDescriptor(LinkDescriptor);
 
-PacketDescriptor::PacketDescriptor() : cClassDescriptor("Packet", "cPacket")
+LinkDescriptor::LinkDescriptor() : cClassDescriptor("Link", "cPacket")
 {
 }
 
-PacketDescriptor::~PacketDescriptor()
+LinkDescriptor::~LinkDescriptor()
 {
 }
 
-bool PacketDescriptor::doesSupport(cObject *obj) const
+bool LinkDescriptor::doesSupport(cObject *obj) const
 {
-    return dynamic_cast<Packet *>(obj)!=NULL;
+    return dynamic_cast<Link *>(obj)!=NULL;
 }
 
-const char *PacketDescriptor::getProperty(const char *propertyname) const
+const char *LinkDescriptor::getProperty(const char *propertyname) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
     return basedesc ? basedesc->getProperty(propertyname) : NULL;
 }
 
-int PacketDescriptor::getFieldCount(void *object) const
+int LinkDescriptor::getFieldCount(void *object) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 4+basedesc->getFieldCount(object) : 4;
+    return basedesc ? 2+basedesc->getFieldCount(object) : 2;
 }
 
-unsigned int PacketDescriptor::getFieldTypeFlags(void *object, int field) const
+unsigned int LinkDescriptor::getFieldTypeFlags(void *object, int field) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -207,13 +179,11 @@ unsigned int PacketDescriptor::getFieldTypeFlags(void *object, int field) const
     static unsigned int fieldTypeFlags[] = {
         FD_ISEDITABLE,
         FD_ISEDITABLE,
-        FD_ISEDITABLE,
-        FD_ISEDITABLE,
     };
-    return (field>=0 && field<4) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<2) ? fieldTypeFlags[field] : 0;
 }
 
-const char *PacketDescriptor::getFieldName(void *object, int field) const
+const char *LinkDescriptor::getFieldName(void *object, int field) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -222,26 +192,22 @@ const char *PacketDescriptor::getFieldName(void *object, int field) const
         field -= basedesc->getFieldCount(object);
     }
     static const char *fieldNames[] = {
-        "type",
         "seq",
-        "tam",
-        "interTime",
+        "type",
     };
-    return (field>=0 && field<4) ? fieldNames[field] : NULL;
+    return (field>=0 && field<2) ? fieldNames[field] : NULL;
 }
 
-int PacketDescriptor::findField(void *object, const char *fieldName) const
+int LinkDescriptor::findField(void *object, const char *fieldName) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
     int base = basedesc ? basedesc->getFieldCount(object) : 0;
-    if (fieldName[0]=='t' && strcmp(fieldName, "type")==0) return base+0;
-    if (fieldName[0]=='s' && strcmp(fieldName, "seq")==0) return base+1;
-    if (fieldName[0]=='t' && strcmp(fieldName, "tam")==0) return base+2;
-    if (fieldName[0]=='i' && strcmp(fieldName, "interTime")==0) return base+3;
+    if (fieldName[0]=='s' && strcmp(fieldName, "seq")==0) return base+0;
+    if (fieldName[0]=='t' && strcmp(fieldName, "type")==0) return base+1;
     return basedesc ? basedesc->findField(object, fieldName) : -1;
 }
 
-const char *PacketDescriptor::getFieldTypeString(void *object, int field) const
+const char *LinkDescriptor::getFieldTypeString(void *object, int field) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -252,13 +218,11 @@ const char *PacketDescriptor::getFieldTypeString(void *object, int field) const
     static const char *fieldTypeStrings[] = {
         "unsigned int",
         "unsigned int",
-        "unsigned int",
-        "double",
     };
-    return (field>=0 && field<4) ? fieldTypeStrings[field] : NULL;
+    return (field>=0 && field<2) ? fieldTypeStrings[field] : NULL;
 }
 
-const char *PacketDescriptor::getFieldProperty(void *object, int field, const char *propertyname) const
+const char *LinkDescriptor::getFieldProperty(void *object, int field, const char *propertyname) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -271,7 +235,7 @@ const char *PacketDescriptor::getFieldProperty(void *object, int field, const ch
     }
 }
 
-int PacketDescriptor::getArraySize(void *object, int field) const
+int LinkDescriptor::getArraySize(void *object, int field) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -279,13 +243,13 @@ int PacketDescriptor::getArraySize(void *object, int field) const
             return basedesc->getArraySize(object, field);
         field -= basedesc->getFieldCount(object);
     }
-    Packet *pp = (Packet *)object; (void)pp;
+    Link *pp = (Link *)object; (void)pp;
     switch (field) {
         default: return 0;
     }
 }
 
-std::string PacketDescriptor::getFieldAsString(void *object, int field, int i) const
+std::string LinkDescriptor::getFieldAsString(void *object, int field, int i) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -293,17 +257,15 @@ std::string PacketDescriptor::getFieldAsString(void *object, int field, int i) c
             return basedesc->getFieldAsString(object,field,i);
         field -= basedesc->getFieldCount(object);
     }
-    Packet *pp = (Packet *)object; (void)pp;
+    Link *pp = (Link *)object; (void)pp;
     switch (field) {
-        case 0: return ulong2string(pp->getType());
-        case 1: return ulong2string(pp->getSeq());
-        case 2: return ulong2string(pp->getTam());
-        case 3: return double2string(pp->getInterTime());
+        case 0: return ulong2string(pp->getSeq());
+        case 1: return ulong2string(pp->getType());
         default: return "";
     }
 }
 
-bool PacketDescriptor::setFieldAsString(void *object, int field, int i, const char *value) const
+bool LinkDescriptor::setFieldAsString(void *object, int field, int i, const char *value) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -311,17 +273,15 @@ bool PacketDescriptor::setFieldAsString(void *object, int field, int i, const ch
             return basedesc->setFieldAsString(object,field,i,value);
         field -= basedesc->getFieldCount(object);
     }
-    Packet *pp = (Packet *)object; (void)pp;
+    Link *pp = (Link *)object; (void)pp;
     switch (field) {
-        case 0: pp->setType(string2ulong(value)); return true;
-        case 1: pp->setSeq(string2ulong(value)); return true;
-        case 2: pp->setTam(string2ulong(value)); return true;
-        case 3: pp->setInterTime(string2double(value)); return true;
+        case 0: pp->setSeq(string2ulong(value)); return true;
+        case 1: pp->setType(string2ulong(value)); return true;
         default: return false;
     }
 }
 
-const char *PacketDescriptor::getFieldStructName(void *object, int field) const
+const char *LinkDescriptor::getFieldStructName(void *object, int field) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -334,7 +294,7 @@ const char *PacketDescriptor::getFieldStructName(void *object, int field) const
     };
 }
 
-void *PacketDescriptor::getFieldStructPointer(void *object, int field, int i) const
+void *LinkDescriptor::getFieldStructPointer(void *object, int field, int i) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -342,7 +302,7 @@ void *PacketDescriptor::getFieldStructPointer(void *object, int field, int i) co
             return basedesc->getFieldStructPointer(object, field, i);
         field -= basedesc->getFieldCount(object);
     }
-    Packet *pp = (Packet *)object; (void)pp;
+    Link *pp = (Link *)object; (void)pp;
     switch (field) {
         default: return NULL;
     }

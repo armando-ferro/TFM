@@ -26,34 +26,43 @@ network Pruebas
         }
     submodules:
         injector: injector {
-            @display("p=45,33");
-            Time_Distribution = "exp";
-            Size_Distribution = "exp";
-            Mean_Time = 30;
-            Mean_Size = 70;
-        }
-        senderSW: senderSW {
-            @display("p=45,190");
-        }
-        fisico1: fisico {
-            @display("p=539,190");
-        }
-        gbn1: free_gbn {
-            @display("p=539,117");
-            Ack_Tam = 1;
+            @display("p=67,33");
+            pktSize = exponential(70bit);
+            delayTime = 30s;
+            n_Pkt = 1000;
         }
         dump: dump {
-            @display("p=539,50");
+            @display("p=510,33");
+        }
+        dump1: dump {
+            @display("p=165,33");
+        }
+        injector1: injector {
+            @display("p=610,33");
+            n_Pkt = 1000;
+        }
+        receiverACK: receiverACK {
+            @display("p=510,136");
+        }
+        receiverACK1: receiverACK {
+            @display("p=165,194;b=7,5");
+        }
+        senderGBN: senderGBN {
+            @display("p=67,136");
+        }
+        senderSW: senderSW {
+            @display("p=610,194");
         }
     connections:
-        injector.down_out --> senderSW.pkt;
         
-        senderSW.out --> C --> fisico1.in;
-        fisico1.out --> C --> senderSW.in;
+        injector.down_out-->senderGBN.up_in;
+        senderGBN.out-->C-->receiverACK.in;
+        receiverACK.out-->C-->senderGBN.in;
+        receiverACK.up_out-->dump.down_in;
         
-        gbn1.down_out --> fisico1.up_in;
-        fisico1.up_out --> gbn1.down_in;
-
-        gbn1.up_out --> dump.down_in;
-
+        injector1.down_out-->senderSW.up_in;
+        senderSW.out-->C-->receiverACK1.in;
+        receiverACK1.out-->C-->senderSW.in;
+        receiverACK1.up_out-->dump1.down_in;
+        
 }

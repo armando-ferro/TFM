@@ -119,12 +119,13 @@ simple free_gbn
 simple injector
 {
     parameters:
-        double Mean_Time = default(70);
-        int Mean_Size = default(30);
-        string Time_Distribution = default("cte");
-        string Size_Distribution = default("cte");
         int Dst_Addr = default(0);
-        int n_Pkt = default(-1)
+        int n_Pkt = default(-1);
+        
+        //Prueba
+        volatile double delayTime @unit(s) = default(30s);   // delay before sending back message
+        volatile double pktSize @unit(bit) = default(70bit);
+        
         
         @signal[pktTam](type=int);
         @statistic[pkt_tam](title="pktTam"; source="pktTam"; record=vector);
@@ -170,7 +171,7 @@ simple senderSW
         @display("i=block/queue");
 
     gates:
-        input pkt;
+        input up_in;
         input in;
         output out;
 }
@@ -194,7 +195,7 @@ simple senderGBN
         @display("i=block/queue");
 
     gates:
-        input pkt;
+        input up_in;
         input in;
         output out;
 }
@@ -214,7 +215,7 @@ simple receiverACK
     gates:
         input in;
         output out;
-        output up;
+        output up_out;
 
 }
 
@@ -222,9 +223,10 @@ simple mux
 {
     parameters:
         @display("i=block/join");
+        xml config = default(xmldoc("pr.xml"));
     gates:
         output out;
-        input in[];
+        input in[10] @loose;
 
 }
 

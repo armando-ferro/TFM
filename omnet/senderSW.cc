@@ -18,7 +18,7 @@
 #include <string.h>
 #include <omnetpp.h>
 #include "Types.h"
-#include "Packet_m.h"
+#include "Link_m.h"
 #include "Inter_layer_m.h"
 
 const short idle = 0;
@@ -27,7 +27,7 @@ const short w_ack = 2;
 
 class senderSW : public cSimpleModule{
 private:
-    Packet *message;  // message that has to be re-sent on error
+    Link *message;  // message that has to be re-sent on error
     cMessage *sent;
     int rpt;
     int ack_seq,sent_seq;
@@ -47,10 +47,10 @@ public:
     virtual ~senderSW();
 
 protected:
-    virtual void sendCopyOf(Packet *msg);
+    virtual void sendCopyOf(Link *msg);
     virtual void initialize();
     virtual void handleMessage(cMessage *msg);
-    virtual Packet *getPacket(Packet *msg);
+    virtual Link *getPacket(cPacket *msg);
 };
 
 Define_Module(senderSW);
@@ -85,6 +85,8 @@ void senderSW::initialize(){
     s_rcvAck = registerSignal("rcvACK");
     s_rcvNack = registerSignal("rcvNACK");
 
+    /*TODO parámetros*/
+
     txChannel = gate("out")->getTransmissionChannel();
 
     sent = new cMessage("sent");
@@ -106,12 +108,12 @@ void senderSW::handleMessage(cMessage *msg){
         state_machine=w_ack;
     }
     else{
-        if(msg->arrivedOn("pkt")){
+        if(msg->arrivedOn("up_in")){
             EV << " nuevo";
             /*llega un paquete nuevo*/
             /*extrare el original*/
             inter_layer *il = check_and_cast<inter_layer *>(msg);
-            Packet *up = (Packet *)il->decapsulate();
+            cPacket *up = (cPacket *)il->decapsulate();
             emit(s_queueState,txQueue->length());
             switch(state_machine){
             case idle:
@@ -132,8 +134,8 @@ void senderSW::handleMessage(cMessage *msg){
             delete(il);
         }else{
             /*Comprobar si es un ACK o un NACK*/
-            Packet *pk = check_and_cast<Packet *>(msg);
-            if (pk->getType()==nack_t)
+            Link *pk = check_and_cast<Link *>(msg);
+            if (pk->getType()==e_nack_t)
             {
                 EV << " NACK";
                 /*NACK*/
@@ -145,7 +147,7 @@ void senderSW::handleMessage(cMessage *msg){
                 }
 
             }
-            else if(pk->getType()==ack_t)
+            else if(pk->getType()==e_ack_t)
             {
                 EV << " ACK";
                 /*ACK*/
@@ -159,7 +161,7 @@ void senderSW::handleMessage(cMessage *msg){
                     }else{
                         /*se debe extraer un mensaje de la cola y enviar*/
                         delete(message);
-                        message = getPacket((Packet *)txQueue->pop());
+                        message = getPacket((cPacket *)txQueue->pop());
                         sendCopyOf(message);
                     }
                     emit(s_rcvAck,++rcvAck);
@@ -171,16 +173,21 @@ void senderSW::handleMessage(cMessage *msg){
     }
 }
 
-Packet *senderSW::getPacket(Packet *msg){
-    msg->setSeq(++sent_seq);
+Link *senderSW::getPacket(cPacket *msg){
+    char msgname[20];
+    sprintf(msgname,"LinkSW-%d",++sent_seq);
+    Link *lk = new Link(msgname,0);
+    lk->setType(e_msg_t);
+    lk->setSeq(sent_seq);
+    lk->encapsulate(msg);
     rpt=0;
-    return msg;
+    return lk;
 }
 
-void senderSW::sendCopyOf(Packet *msg)
+void senderSW::sendCopyOf(Link *msg)
 {
     /*Duplicar el mensaje y mandar una copia*/
-    Packet *copy = (Packet *) msg->dup();
+    Link *copy = (Link *) msg->dup();
     send(copy, "out");
     rpt++;
     state_machine=sending;

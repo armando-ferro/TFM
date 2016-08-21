@@ -255,8 +255,8 @@ void free_gbn::newPacket(inter_layer *pk){
 
     /*Crear el paquete y encapsular*/
     Packet * sp = new Packet("free_gbn",0);
-    sp->setSrcAddr(origen);
-    sp->setDestAddr(ds);
+    //sp->setSrcAddr(origen);
+    //sp->setDestAddr(ds);
     sp->setBitLength(header_tam);
     sp->encapsulate(body);
 
@@ -275,7 +275,7 @@ void free_gbn::arrivedPacket(Packet *pk){
     /*recivido nuevo mensaje externo*/
     EV << " Arrived Packet";
     int r_seq = pk->getSeq();
-    int dest = pk->getSrcAddr();
+    //int dest = pk->getSrcAddr();
     if (pk->hasBitError())
     {
         EV << " Con error";
@@ -283,7 +283,7 @@ void free_gbn::arrivedPacket(Packet *pk){
         bubble("message error");
         if(r_seq==(rcv_seq+1)){
             //el que se esperaba
-            send_Nack(r_seq,dest);
+            //send_Nack(r_seq,dest);
         }
         /*Si es menor ya se ha recivido correctametne y se obvia*/
         /*Si es mayor que el esperado se obvia*/
@@ -294,12 +294,12 @@ void free_gbn::arrivedPacket(Packet *pk){
          /*paquete sin errores comprobar secuencia*/
          if(r_seq==(rcv_seq+1)){
             //paquete correcto (secuencia esperada)
-            send_Ack(++rcv_seq,dest);
+            //send_Ack(++rcv_seq,dest);
             send_up(pk);
             /*VIEJO*/
         }else {
             /*En caso de recivir una secuencia menor o mayor se envia un ACK de la última (ACK acumulado)*/
-            send_Ack(rcv_seq,dest);
+            //send_Ack(rcv_seq,dest);
         }
      }
 }
@@ -315,8 +315,8 @@ void free_gbn::send_Nack(int s_seq,int dest){
     pkt->setBitLength(ack_tam);
     pkt->setType(t_nack_t);
     pkt->setSeq(s_seq);
-    pkt->setSrcAddr(origen);
-    pkt->setDestAddr(dest);
+    //pkt->setSrcAddr(origen);
+    //pkt->setDestAddr(dest);
 
     /*preparar el inter layer y mandarlo*/
     sprintf(msgname,"il_free_gbn_NACK-%d",s_seq);
@@ -343,8 +343,8 @@ void free_gbn::send_Ack(int s_seq, int dest)
     pkt->setBitLength(ack_tam);
     pkt->setType(t_ack_t);
     pkt->setSeq(s_seq);
-    pkt->setSrcAddr(origen);
-    pkt->setDestAddr(dest);
+    //pkt->setSrcAddr(origen);
+    //pkt->setDestAddr(dest);
 
     /*preparar el inter layer y mandarlo*/
     sprintf(msgname,"il_free_gbn_ACK-%d",s_seq);

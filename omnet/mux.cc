@@ -18,11 +18,14 @@
 #include <omnetpp.h>
 #include "Packet_m.h"
 #include "Inter_layer_m.h"
+#include <cxmlelement.h>
 
 
 class mux : public cSimpleModule {
 private:
     /*variables*/
+    int n;
+    cXMLElement * xml;
 public:
     mux();
     virtual ~mux();
@@ -45,11 +48,47 @@ mux::~mux() {
 }
 
 void mux::initialize(){
+    n = gateSize("in");
+    if(par("config").containsValue()){
+        xml = par("config").xmlValue();
+    }
+
 
 }
 
 void mux::handleMessage(cMessage *msg){
     /*Los paquetes que entran salen por out no es bidireccional*/
+    /*reconcoer por cual llega*/
+    if(msg->arrivedOn("in",0)){
+        /*TODO asignar linea*/
+    }
+    if(msg->arrivedOn("in",1)){
+        /*TODO asignar linea*/
+    }
+    if(msg->arrivedOn("in",2)){
+        /*TODO asignar linea*/
+    }
+    if(msg->arrivedOn("in",3)){
+        /*TODO asignar linea*/
+    }
+    if(msg->arrivedOn("in",4)){
+        /*TODO asignar linea*/
+    }
+    if(msg->arrivedOn("in",5)){
+        /*TODO asignar linea*/
+    }
+    if(msg->arrivedOn("in",6)){
+        /*TODO asignar linea*/
+    }
+    if(msg->arrivedOn("in",7)){
+        /*TODO asignar linea*/
+    }
+    if(msg->arrivedOn("in",8)){
+        /*TODO asignar linea*/
+    }
+    if(msg->arrivedOn("in",9)){
+        /*TODO asignar linea*/
+    }
     /*empaqueter y mandar*/
     Packet *pk = check_and_cast<Packet *>(msg);
     inter_layer *il = new inter_layer();

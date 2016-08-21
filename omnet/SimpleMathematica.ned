@@ -28,10 +28,8 @@ network MathematicaSW
     submodules:
         injector: injector {
             @display("p=45,33");
-            Time_Distribution = "exp";
-            Size_Distribution = "exp";
-            Mean_Time = 1;
-            Mean_Size = 10;
+            pktSize = exponential(10bit);
+            delayTime = exponential(1s);
             Dst_Addr = 1;
             n_Pkt = 1000;
         }
@@ -46,12 +44,12 @@ network MathematicaSW
             @display("p=539,33");
         }
     connections:
-        injector.down_out --> senderSW.pkt;
+        injector.down_out --> senderSW.up_in;
 
         senderSW.out --> C --> receiverACK.in;
         receiverACK.out --> C --> senderSW.in;
 
-        receiverACK.up --> dump.down_in;
+        receiverACK.up_out --> dump.down_in;
 
 }
 
@@ -68,10 +66,8 @@ network MathematicaGBN
     submodules:
         injector: injector {
             @display("p=45,33");
-            Time_Distribution = "exp";
-            Size_Distribution = "exp";
-            Mean_Time = 1;
-            Mean_Size = 10;
+            pktSize = exponential(10bit);
+            delayTime = exponential(1s);
             Dst_Addr = 1;
             n_Pkt = 1000;
         }
@@ -85,11 +81,11 @@ network MathematicaGBN
             @display("p=539,33");
         }
     connections:
-        injector.down_out --> senderGBN.pkt;
+        injector.down_out --> senderGBN.up_in;
 
         senderGBN.out --> C --> receiverACK.in;
         receiverACK.out --> C --> senderGBN.in;
 
-        receiverACK.up --> dump.down_in;
+        receiverACK.up_out --> dump.down_in;
 
 }

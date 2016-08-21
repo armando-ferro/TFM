@@ -20,7 +20,7 @@
 #include <ctopology.h>
 #include <cstringtokenizer.h>
 #include "Types.h"
-#include "Packet_m.h"
+#include "Link_m.h"
 #include "inter_layer_m.h"
 
 const short idle = 0;
@@ -51,10 +51,10 @@ public:
     virtual ~senderGBN();
 
 protected:
-    virtual void sendCopyOf(Packet *msg);
+    virtual void sendCopyOf(Link *msg);
     virtual void initialize();
     virtual void handleMessage(cMessage *msg);
-    virtual Packet *getPacket(Packet *msg);
+    virtual Link *getPacket(cPacket *msg);
     virtual void startRetrasmision();
 };
 
@@ -94,6 +94,8 @@ void senderGBN::initialize(){
     s_rcvNack = registerSignal("rcvNACK");
     s_windowTam = registerSignal("WindowTam");
 
+    /*TODO parámetros*/
+
     /*Inicializar variables*/
     txChannel = gate("out")->getTransmissionChannel();
     sent = new cMessage("sent");
@@ -123,9 +125,9 @@ void senderGBN::handleMessage(cMessage *msg){
                 state_machine = idle;
             }else{
                 /*hay mensajes que enviar*/
-                Packet *pk = (Packet *)txQueue->pop();
-                pk = getPacket(pk);
-                sendCopyOf(pk);
+                cPacket *pk = (cPacket *)txQueue->pop();
+                Link * lk = getPacket(pk);
+                sendCopyOf(lk);
                 state_machine = sending_i;
             }
             break;
@@ -140,15 +142,15 @@ void senderGBN::handleMessage(cMessage *msg){
                     state_machine = idle;
                 }else{
                     /*hay mensajes que enviar*/
-                    Packet *pk = (Packet *)txQueue->pop();
-                    pk = getPacket(pk);
-                    sendCopyOf(pk);
+                    cPacket *pk = (cPacket *)txQueue->pop();
+                    Link * lk = getPacket(pk);
+                    sendCopyOf(lk);
                     state_machine = sending_i;
                 }
             }
             else{
                 /*Se debe seguir transmitiendo la repetición*/
-                Packet *pk = (Packet *)ackQueue->get(rpt_seq++);
+                Link *pk = (Link *)ackQueue->get(rpt_seq++);
                 sendCopyOf(pk);
                 state_machine = sending_r;
             }
@@ -158,19 +160,19 @@ void senderGBN::handleMessage(cMessage *msg){
     else{
         /*El mensaje no es el sent*/
 
-        if(msg->arrivedOn("pkt")){
+        if(msg->arrivedOn("up_in")){
             /*Es un mensaje nuevo*/
             /*desencapsular*/
             inter_layer *il = check_and_cast<inter_layer *>(msg);
-            Packet *up = (Packet *)il->decapsulate();
+            cPacket *up = (cPacket *)il->decapsulate();
             emit(s_queueState,txQueue->length());
             emit(s_windowTam,(sent_seq-ack_seq));
             EV << " Message nuevo. ";
             /*llega un paquete nuevo*/
             if(state_machine == idle){
                 /*si se esta esperando se envia el mensaje*/
-                up = getPacket(up);
-                sendCopyOf(up);
+                Link *lk = getPacket(up);
+                sendCopyOf(lk);
                 state_machine = sending_i;
             }else{
                 /*se almacena el mensaje en la cola*/
@@ -179,9 +181,9 @@ void senderGBN::handleMessage(cMessage *msg){
             delete(il);
         }else{
             /*Comprobar si es un ACK o un NACK*/
-            Packet *pk = check_and_cast<Packet *>(msg);
+            Link *pk = check_and_cast<Link *>(msg);
             int rcv_seq = pk->getSeq();
-            if (pk->getType()==nack_t)
+            if (pk->getType()==e_nack_t)
             {
                 EV << " NACK. ";
                 /*NACK*/
@@ -194,7 +196,7 @@ void senderGBN::handleMessage(cMessage *msg){
                     /*se han perdido ack*/
                     /*se supone que ack acumulado, se debe repetir a partir del erroneo*/
                     for(int i = 0;i<((rcv_seq-1)-ack_seq);i++){
-                        Packet *pkt = (Packet *) ackQueue->pop();
+                        Link *pkt = (Link *) ackQueue->pop();
                         delete(pkt);
                     }
                     ack_seq = rcv_seq-1;
@@ -203,7 +205,7 @@ void senderGBN::handleMessage(cMessage *msg){
                 }
                 /*si ya se ha recivido un ack superior no se puede recivir uno inferior*/
             }
-            else if(pk->getType()==ack_t)
+            else if(pk->getType()==e_ack_t)
             {
                 EV << " ACK. ";
                 /*ACK*/
@@ -211,7 +213,7 @@ void senderGBN::handleMessage(cMessage *msg){
                 int ack_acum = rcv_seq - ack_seq;
                 if(ack_acum >= 1){
                     for(int i = 0;i<ack_acum;i++){
-                        Packet *pkt = (Packet *)ackQueue->pop();
+                        Link *pkt = (Link *)ackQueue->pop();
                         delete(pkt);
                     }
                     ack_seq = rcv_seq;
@@ -237,26 +239,32 @@ void senderGBN::startRetrasmision(){
     /*Comprobar estado*/
     if(state_machine == idle){
         /*enviar primer paquete repetido*/
-        Packet *pk = (Packet *)ackQueue->get(rpt_seq++);
+        Link *pk = (Link *)ackQueue->get(rpt_seq++);
         sendCopyOf(pk);
     }
     /*este o no retrasmistiendo el nuevo estado es el de reenvio*/
     state_machine = sending_r;
 }
 
-Packet *senderGBN::getPacket(Packet *msg){
+Link *senderGBN::getPacket(cPacket *msg){
     EV << " generando secuencia";
-    /*Función al enviar un nuevo paquete, adaptarlo y mandarlo al código*/
-    msg->setSeq(++sent_seq);
-    ackQueue->insert(msg);
-    return msg;
+
+    /*Generar nuevo paquete, encapsular y guardar*/
+    char msgname[20];
+    sprintf(msgname,"LinkGBN-%d",++sent_seq);
+    Link *lk = new Link(msgname,0);
+    lk->setType(e_msg_t);
+    lk->setSeq(sent_seq);
+    lk->encapsulate(msg);
+    ackQueue->insert(lk);
+    return lk;
 }
 
-void senderGBN::sendCopyOf(Packet *msg)
+void senderGBN::sendCopyOf(Link *msg)
 {
     EV << " Enviando mensaje";
     /*Duplicar el mensaje y mandar una copia*/
-    Packet *copy = (Packet *) msg->dup();
+    Link *copy = (Link *) msg->dup();
     send(copy, "out");
     simtime_t txFinishTime = txChannel->getTransmissionFinishTime();
     scheduleAt(txFinishTime,sent);

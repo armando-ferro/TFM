@@ -28,10 +28,6 @@ const short a_msg_t = 0;
 const short a_ack_t = 1;
 const short a_nack_t = 2;
 
-/*tipos para uso de mathematica*/
-const short msg_t = 0;
-const short ack_t = 1;
-const short nack_t = 2;
 
 
 #endif /* TYPES_H_ */

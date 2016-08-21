@@ -26,10 +26,8 @@ network GoBackN
     submodules:
         injector: injector {
             @display("p=45,33");
-            Time_Distribution = "exp";
-            Size_Distribution = "exp";
-            Mean_Time = 30;
-            Mean_Size = 70;
+            pktSize = exponential(70bit);
+            delayTime = exponential(30s);
         }
         gbn: free_gbn {
             @display("p=45,107");

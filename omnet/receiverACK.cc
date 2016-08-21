@@ -18,7 +18,8 @@
 #include <omnetpp.h>
 #include <simtime.h>
 #include "Types.h"
-#include "Packet_m.h"
+#include "Link_m.h"
+#include "Inter_Layer_m.h"
 
 class receiverACK : public cSimpleModule {
 private:
@@ -34,6 +35,7 @@ protected:
     virtual void initialize();
     virtual void handleMessage(cMessage *msg);
     virtual void sentNack(int s_seq);
+    virtual void send_up(cPacket *pk);
 };
 
 Define_Module(receiverACK);
@@ -63,7 +65,7 @@ void receiverACK::initialize(){
 }
 
 void receiverACK::handleMessage(cMessage *msg){
-    Packet *pk = check_and_cast<Packet *>(msg);
+    Link *pk = check_and_cast<Link *>(msg);
     int r_seq = pk->getSeq();
     if (pk->hasBitError())
     {
@@ -82,34 +84,44 @@ void receiverACK::handleMessage(cMessage *msg){
      {
          if(r_seq==(seq+1)){
             //paquete correcto
-            Packet * pkt = new Packet("ACK",0);
+            Link * pkt = new Link("ACK",0);
             pkt->setBitLength(ack_tam);
-            pkt->setType(ack_t);
+            pkt->setType(e_ack_t);
             pkt->setSeq(++seq);
             send(pkt, "out");
             emit(s_sndAck,++sndAck);
             /*enviar el paquete a la capa supeior*/
-            send(pk,"up");
+            if(pk->hasEncapsulatedPacket()){
+                cPacket * up = (cPacket *)pk->decapsulate();
+                send_up(up);
+            }
         }else if(r_seq<(seq+1)){
             /*En caso de recivir una secuencia menor se envia un ACK de la última (ACK acumulado)*/
-            Packet * pkt = new Packet("ACK",0);
+            Link * pkt = new Link("ACK",0);
             pkt->setBitLength(ack_tam);
-            pkt->setType(ack_t);
+            pkt->setType(e_ack_t);
             pkt->setSeq(seq);
             send(pkt, "out");
             emit(s_sndAck,++sndAck);
-            delete(pk);
         }
         /*En caso de que el paquete llega desordenado (un sequencia mayor), se obvia*/
+         delete(pk);
      }
 }
 
 void receiverACK::sentNack(int s_seq){
-    Packet * pkt = new Packet("NACK",1);
+    Link * pkt = new Link("NACK",1);
     pkt->setBitLength(ack_tam);
-    pkt->setType(nack_t);
+    pkt->setType(e_nack_t);
     pkt->setSeq(s_seq);
     send(pkt,"out");
+}
+
+void receiverACK::send_up(cPacket *pk){
+    inter_layer *il = new inter_layer("fisicoUP",0);
+    il->encapsulate(pk);
+
+    send(il,"up_out");
 }
 
 

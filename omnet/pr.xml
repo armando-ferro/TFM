@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pr>
+    <pr2 id="gen1">
+          <param>3</param>
+          <param>5</param>
+    </pr2>
+    <pr2 id="gen2">
+          <param>9</param>
+    </pr2>
+</pr>

@@ -170,7 +170,8 @@ void free_sw::handleMessage(cMessage *msg)
             Packet *up = check_and_cast<Packet *>(msg);
             /*Paquete de la capa inferior*/
             /*comprobar destinatario*/
-            if(up->getDestAddr()==origen){
+            //if(up->getDestAddr()==origen){
+            if(true){
                 /*destinatario correcto*/
                 switch(up->getType()){
                 case t_nack_t:
@@ -242,8 +243,8 @@ void free_sw::newPacket(inter_layer *pk){
 
     /*Crear el paquete y encapsular*/
     Packet * sp = new Packet("free_sw",0);
-    sp->setSrcAddr(origen);
-    sp->setDestAddr(ds);
+    //sp->setSrcAddr(origen);
+    //sp->setDestAddr(ds);
     sp->setBitLength(header_tam);
     sp->encapsulate(body);
 
@@ -275,7 +276,7 @@ void free_sw::arrivedPacket(Packet *pk){
     /*recivido nuevo mensaje externo*/
     EV << " Arrived Packet";
     int r_seq = pk->getSeq();
-    int sender = pk->getSrcAddr();
+    //int sender = pk->getSrcAddr();
     if (pk->hasBitError())
     {
         EV << " Con error";
@@ -283,7 +284,7 @@ void free_sw::arrivedPacket(Packet *pk){
         bubble("message error");
         if(r_seq==(rcv_seq+1)){
             //el que se esperaba
-            send_Nack(r_seq,sender);
+            //send_Nack(r_seq,sender);
         }
         /*Si es menor ya se ha recivido correctametne y se obvia*/
         /*Si es mayor que el esperado se obvia*/
@@ -294,12 +295,12 @@ void free_sw::arrivedPacket(Packet *pk){
          /*paquete sin errores comprobar secuencia*/
          if(r_seq==(rcv_seq+1)){
             //paquete correcto (secuencia esperada)
-            send_Ack(++rcv_seq,sender);
+            //send_Ack(++rcv_seq,sender);
             send_up(pk);
             /*VIEJO*/
         }else if(r_seq<(rcv_seq+1)){
             /*En caso de recivir una secuencia menor se envia un ACK de la última (ACK acumulado)*/
-            send_Ack(rcv_seq,sender);
+            //send_Ack(rcv_seq,sender);
         }
         /*En caso de que el paquete llega desordenado (un sequencia mayor), se obvia*/
      }
@@ -316,8 +317,8 @@ void free_sw::send_Nack(int s_seq,int sender){
     pkt->setBitLength(ack_tam);
     pkt->setType(t_nack_t);
     pkt->setSeq(s_seq);
-    pkt->setSrcAddr(origen);
-    pkt->setDestAddr(sender);
+    //pkt->setSrcAddr(origen);
+    //pkt->setDestAddr(sender);
 
     /*preparar el inter layer y mandarlo*/
     sprintf(msgname,"il_free_sw_NACK-%d",s_seq);
@@ -344,8 +345,8 @@ void free_sw::send_Ack(int s_seq,int sender)
     pkt->setBitLength(ack_tam);
     pkt->setType(t_ack_t);
     pkt->setSeq(s_seq);
-    pkt->setSrcAddr(origen);
-    pkt->setDestAddr(sender);
+    //pkt->setSrcAddr(origen);
+    //pkt->setDestAddr(sender);
 
     /*preparar el inter layer y mandarlo*/
     sprintf(msgname,"il_free_sw_ACK-%d",s_seq);
