@@ -51,7 +51,7 @@ simple free_sw
     parameters:
         @display("i=block/queue");
 
-        int Addr = default(0);
+        int Addr = default(100);
         int Header_Tam = default(0);
         int Ack_Tam = default(1);
         int Time_Out = default(300);
@@ -82,11 +82,11 @@ simple free_sw
 simple free_gbn
 {
     parameters:
-        int Addr = default(0);
+        int Addr = default(100);
         int Header_Tam = default(0);
         int Ack_Tam = default(1);
         int Queue_Tam = default(-1);
-        int Window_Tam = default(-1);
+        int Window_Tam = default(3);
         int Time_Out = default(300);
 
         @display("i=block/queue");

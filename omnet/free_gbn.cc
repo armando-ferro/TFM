@@ -3,12 +3,12 @@
 #include <omnetpp.h>
 #include <simtime.h>
 #include "Types.h"
-#include "Packet_m.h"
+#include "Transport_m.h"
 #include "Inter_layer_m.h"
 
 /*Estados*/
 const short idle = 0;
-const short resending = 1;
+const short full_w = 1;
 
 /*Control de flujo free_gbn*/
 
@@ -53,12 +53,12 @@ class free_gbn : public cSimpleModule
     virtual void initialize();
     virtual void handleMessage(cMessage *msg);
     virtual void rptQueue();
-    virtual void arrivedPacket(Packet * pk);
+    virtual void arrivedPacket(Transport * pk);
     virtual void newPacket(inter_layer * pk);
     virtual void send_Nack(int s_seq,int dest);
     virtual void send_Ack(int s_seq,int dest);
-    virtual void send_pk(Packet * pk);
-    virtual void send_up(Packet * pk);
+    virtual void send_pk(Transport * pk);
+    virtual void send_up(Transport * pk);
 };
 
 // The module class needs to be registered with OMNeT++
@@ -108,6 +108,11 @@ void free_gbn::initialize()
     /*Parámetros*/
         if(par("Addr").containsValue()){
             origen  = par("Addr");
+            if(origen < 100){
+               bubble("dirección origen no válida");
+               finish();
+               endSimulation();
+           }
         }
 
         if(par("Header_Tam").containsValue()){
@@ -155,22 +160,29 @@ void free_gbn::initialize()
 /*Recepción de mensajes*/
 void free_gbn::handleMessage(cMessage *msg)
 {
+    EV << "Handle Message";
     /*comprobar si es el propio*/
     if(msg == time){
         /*reenvio*/
+        EV << " Time out";
+        bubble("Time out");
         rptQueue();
+        return;
     }
-    EV << "Handle Message";
+    inter_layer *pk = check_and_cast<inter_layer *>(msg);
     if(msg->arrivedOn("up_in")){
         /*paquete de la capa superior*/
-        EV << "Capa Superior";
-        inter_layer *pk = check_and_cast<inter_layer *>(msg);
+        EV << " Capa Superior";
         newPacket(pk);
         delete(pk);
     }
     else{
         EV << " Capa inferior";
-        Packet *up = check_and_cast<Packet *>(msg);
+        Transport *up = (Transport *) pk->decapsulate();
+        if(up->getDstAddr()!=origen){
+            bubble("Destinatario erróneo");
+            return;
+        }
         /*Paquete de la capa inferior*/
         int seq;
         switch(up->getType()){
@@ -202,11 +214,35 @@ void free_gbn::handleMessage(cMessage *msg)
             int ack_acum;
             ack_acum = seq - ack_seq;
             if(ack_acum >= 1){
+                emit(s_rcvAck,++rcvAck);
                 for(int i = 0;i<ack_acum;i++){
                     inter_layer *il = (inter_layer *)ackQueue->pop();
                     delete(il);
                 }
                 ack_seq = seq;
+                /*temporizador*/
+                cancelEvent(time);
+                if(ackQueue->length()>0){
+                    scheduleAt(simTime()+time_out,time);
+                }
+                /*Comprobar estado*/
+                if(state_machine == full_w){
+                    /*comprobar cola*/
+                    if(txQueue->isEmpty()){
+                        state_machine = idle;
+                    }else{
+                        Transport *tx ;
+                        while(ackQueue->length()<window_tam && txQueue->length()>0){
+                            tx = (Transport *)txQueue->pop();
+                            send_pk(tx);
+                        }
+                        if(ackQueue->length()<window_tam){
+                            state_machine = idle;
+                        }else{
+                            state_machine = full_w;
+                        }
+                    }
+                }
             }
             /*Si el ACK es menor se obvia, ya se ha gestinado*/
             break;
@@ -221,6 +257,7 @@ void free_gbn::handleMessage(cMessage *msg)
             break;
         }
         delete(up);
+        delete(pk);
     }
 }
 
@@ -228,7 +265,6 @@ void free_gbn::handleMessage(cMessage *msg)
 void free_gbn::rptQueue()
 {
     EV << " Rpt";
-    state_machine = resending;
     /*repetir todos los mensajes de la cola*/
     int rpt;
     rpt = 0;
@@ -237,13 +273,20 @@ void free_gbn::rptQueue()
         inter_layer * copy = (inter_layer *) il->dup();
         send(copy,"down_out");
     }
-    /*comprobar que no hay más paquete que enviar o enviarlos*/
-    Packet *pk;
-    while(!txQueue->isEmpty()){
-        pk = (Packet *)txQueue->pop();
-        send_pk(pk);
+    /*Reponer temporizador*/
+    cancelEvent(time);
+    scheduleAt(simTime()+time_out,time);
+    /*comprobar que no se ha llegado al límite y si no se ha llegado si no hay más paquetes*/
+    Transport *tx ;
+    while(ackQueue->length()<window_tam && txQueue->length()>0){
+        tx = (Transport *)txQueue->pop();
+        send_pk(tx);
     }
-    state_machine = idle;
+    if(ackQueue->length()<window_tam){
+        state_machine = idle;
+    }else{
+        state_machine = full_w;
+    }
 }
 
 void free_gbn::newPacket(inter_layer *pk){
@@ -254,9 +297,9 @@ void free_gbn::newPacket(inter_layer *pk){
     cPacket *body = (cPacket *) pk->decapsulate();
 
     /*Crear el paquete y encapsular*/
-    Packet * sp = new Packet("free_gbn",0);
-    //sp->setSrcAddr(origen);
-    //sp->setDestAddr(ds);
+    Transport * sp = new Transport("free_gbn",0);
+    sp->setSrcAddr(origen);
+    sp->setDstAddr(ds);
     sp->setBitLength(header_tam);
     sp->encapsulate(body);
 
@@ -267,15 +310,26 @@ void free_gbn::newPacket(inter_layer *pk){
     }
     else{
         /*mandando, encolar*/
-        txQueue->insert(sp);
+        if(queue_tam<0){
+            /*no hay límites*/
+            txQueue->insert(sp);
+        }else{
+            if(txQueue->length()>=queue_tam){
+                bubble("Cola llena");
+                delete(sp);
+            }
+            else{
+                txQueue->insert(sp);
+            }
+        }
     }
 }
 
-void free_gbn::arrivedPacket(Packet *pk){
+void free_gbn::arrivedPacket(Transport *pk){
     /*recivido nuevo mensaje externo*/
     EV << " Arrived Packet";
     int r_seq = pk->getSeq();
-    //int dest = pk->getSrcAddr();
+    int dest = pk->getSrcAddr();
     if (pk->hasBitError())
     {
         EV << " Con error";
@@ -283,7 +337,7 @@ void free_gbn::arrivedPacket(Packet *pk){
         bubble("message error");
         if(r_seq==(rcv_seq+1)){
             //el que se esperaba
-            //send_Nack(r_seq,dest);
+            send_Nack(r_seq,dest);
         }
         /*Si es menor ya se ha recivido correctametne y se obvia*/
         /*Si es mayor que el esperado se obvia*/
@@ -294,12 +348,11 @@ void free_gbn::arrivedPacket(Packet *pk){
          /*paquete sin errores comprobar secuencia*/
          if(r_seq==(rcv_seq+1)){
             //paquete correcto (secuencia esperada)
-            //send_Ack(++rcv_seq,dest);
+            send_Ack(++rcv_seq,dest);
             send_up(pk);
-            /*VIEJO*/
         }else {
             /*En caso de recivir una secuencia menor o mayor se envia un ACK de la última (ACK acumulado)*/
-            //send_Ack(rcv_seq,dest);
+            send_Ack(rcv_seq,dest);
         }
      }
 }
@@ -311,18 +364,18 @@ void free_gbn::send_Nack(int s_seq,int dest){
     /*creación del NACK*/
     char msgname[20];
     sprintf(msgname,"NACK-%d",s_seq);
-    Packet * pkt = new Packet(msgname,1);
+    Transport * pkt = new Transport(msgname,1);
     pkt->setBitLength(ack_tam);
     pkt->setType(t_nack_t);
     pkt->setSeq(s_seq);
-    //pkt->setSrcAddr(origen);
-    //pkt->setDestAddr(dest);
+    pkt->setSrcAddr(origen);
+    pkt->setDstAddr(dest);
 
     /*preparar el inter layer y mandarlo*/
     sprintf(msgname,"il_free_gbn_NACK-%d",s_seq);
     inter_layer * il  = new inter_layer(msgname,0);
-    il->setOrigen(0);
-    il->setDestino(0);
+    il->setOrigen(origen);
+    il->setDestino(dest%10);
     il->setBitLength(0);
     il->encapsulate(pkt);
 
@@ -339,18 +392,18 @@ void free_gbn::send_Ack(int s_seq, int dest)
     /*creación del ACK*/
     char msgname[20];
     sprintf(msgname,"ACK-%d",s_seq);
-    Packet * pkt = new Packet(msgname,0);
+    Transport * pkt = new Transport(msgname,0);
     pkt->setBitLength(ack_tam);
     pkt->setType(t_ack_t);
     pkt->setSeq(s_seq);
-    //pkt->setSrcAddr(origen);
-    //pkt->setDestAddr(dest);
+    pkt->setSrcAddr(origen);
+    pkt->setDstAddr(dest);
 
     /*preparar el inter layer y mandarlo*/
     sprintf(msgname,"il_free_gbn_ACK-%d",s_seq);
     inter_layer *il  = new inter_layer(msgname,0);
-    il->setOrigen(0);
-    il->setDestino(0);
+    il->setOrigen(origen);
+    il->setDestino(dest%10);
     il->setBitLength(0);
     il->encapsulate(pkt);
 
@@ -358,7 +411,7 @@ void free_gbn::send_Ack(int s_seq, int dest)
     send(il,"down_out");
     emit(s_sndAck,++sndAck);
 }
-void free_gbn::send_pk(Packet * pk){
+void free_gbn::send_pk(Transport * pk){
     EV << " Sen pk";
    /* poner secuencia rellenar inter_layer y mandar*/
     /*crear copia en message*/
@@ -366,18 +419,34 @@ void free_gbn::send_pk(Packet * pk){
     char msgname[20];
     sprintf(msgname,"il_free_gbn-%d",sent_seq);
     inter_layer *il = new inter_layer(msgname,0);
-    il->setOrigen(0);
-    il->setDestino(0);
-    il->setBitLength(0);
+    il->setOrigen(origen);
+    il->setDestino((pk->getDstAddr())%10);
     il->encapsulate(pk);
+    /*Preparar el temporizador si es necesario*/
+    if(ackQueue->length()==0){
+        /*primer paquete, no hay evento, preparar*/
+        scheduleAt(simTime()+time_out,time);
+    }
     ackQueue->insert(il);
     inter_layer *snd = il->dup();
     send(snd,"down_out");
-    state_machine = idle;
+
+    if(ackQueue->length()<window_tam){
+        state_machine = idle;
+    }else{
+        state_machine = full_w;
+    }
 }
 
-void free_gbn::send_up(Packet * pk){
-    /*Desencapsular y mandar*/
-    Packet *up = (Packet * )pk->decapsulate();
-    send(up,"up_out");
+void free_gbn::send_up(Transport * pk){
+    /*Desencapsular y subir*/
+    if(pk->hasEncapsulatedPacket()){
+        cPacket *up = (cPacket * )pk->decapsulate();
+        int orig = pk->getSrcAddr();
+        inter_layer * il = new inter_layer("TransprotILup",0);
+        il->setOrigen(orig);
+        il->setDestino(origen);
+        il->encapsulate(up);
+        send(il,"up_out");
+    }
 }

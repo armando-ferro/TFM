@@ -3,7 +3,7 @@
 #include <omnetpp.h>
 #include <simtime.h>
 #include "Types.h"
-#include "Packet_m.h"
+#include "Transport_m.h"
 #include "Inter_layer_m.h"
 
 /*Estados*/
@@ -27,6 +27,7 @@ class free_sw : public cSimpleModule
     int ack_tam;
     int origen;
     int queue_tam;
+    bool config;
     /*Para señales*/
     int rcvAck;
     int sndAck;
@@ -49,12 +50,12 @@ class free_sw : public cSimpleModule
     virtual void initialize();
     virtual void handleMessage(cMessage *msg);
     virtual void sendCopyOf(inter_layer *msg);
-    virtual void arrivedPacket(Packet * pk);
+    virtual void arrivedPacket(Transport * pk);
     virtual void newPacket(inter_layer * pk);
     virtual void send_Nack(int s_seq,int sender);
     virtual void send_Ack(int s_seq,int sender);
-    virtual void send_pk(Packet * pk);
-    virtual void send_up(Packet * pk);
+    virtual void send_pk(Transport * pk);
+    virtual void send_up(Transport * pk);
 };
 
 // The module class needs to be registered with OMNeT++
@@ -69,6 +70,7 @@ free_sw::free_sw()
     txQueue = NULL;
     message = NULL;
     time = NULL;
+    config = true;
     /*parámetros*/
     time_out = 300;
     header_tam = 0;
@@ -102,6 +104,10 @@ void free_sw::initialize()
     /*Parámetros*/
     if(par("Addr").containsValue()){
         origen  = par("Addr");
+        if(origen < 100){
+            bubble("dirección origen no válida");
+            config = false;
+        }
     }
 
     if(par("Header_Tam").containsValue()){
@@ -143,11 +149,16 @@ void free_sw::initialize()
     WATCH(origen);
     WATCH(ack_tam);
     WATCH(time_out);
+
+    if(config == false){
+        endSimulation();
+    }
 }
 
 /*Recepción de mensajes*/
 void free_sw::handleMessage(cMessage *msg)
 {
+
     EV << "Handle Message";
     /*comprobar si es time_out*/
     if(msg == time){
@@ -167,13 +178,12 @@ void free_sw::handleMessage(cMessage *msg)
         }
         else{
             EV << " Capa inferior";
-            Packet *up = check_and_cast<Packet *>(msg);
+            inter_layer *d_il = check_and_cast<inter_layer *>(msg);
+            Transport * tp = (Transport *) d_il->decapsulate();
             /*Paquete de la capa inferior*/
-            /*comprobar destinatario*/
-            //if(up->getDestAddr()==origen){
-            if(true){
+            if(tp->getDstAddr()==origen){
                 /*destinatario correcto*/
-                switch(up->getType()){
+                switch(tp->getType()){
                 case t_nack_t:
                     /*nack*/
                     EV << " NACK";
@@ -186,7 +196,7 @@ void free_sw::handleMessage(cMessage *msg)
                     EV << " ACK";
                     /*extraer secuencia y comprobar*/
                     int ack_seq;
-                    ack_seq = up->getSeq();
+                    ack_seq = tp->getSeq();
                     if(ack_seq == sent_seq){
                         /*ACK correcto*/
                         /*comprobar cola*/
@@ -196,7 +206,7 @@ void free_sw::handleMessage(cMessage *msg)
                         }
                         else{
                             /*sacar de cola y mandar*/
-                            Packet * sp  = (Packet *)txQueue->pop();
+                            Transport * sp  = (Transport *)txQueue->pop();
                             send_pk(sp);
                         }
                         emit(s_rcvAck,++rcvAck);
@@ -206,18 +216,19 @@ void free_sw::handleMessage(cMessage *msg)
                 case t_msg_t:
                     /*nuevo mensaje recivido*/
                     EV << " Nuevo mensaje";
-                    arrivedPacket(up);
+                    arrivedPacket(tp);
                     break;
                 default:
                     EV << " Default";
-                    arrivedPacket(up);
+                    arrivedPacket(tp);
                     break;
                 }
             }else{
                 /*destinatario erronea*/
                 bubble("Mensaje para otro");
             }
-            delete(up);
+            delete(tp);
+            delete(d_il);
         }
     }
 }
@@ -239,55 +250,55 @@ void free_sw::newPacket(inter_layer *pk){
     EV << " New Packet";
     //int og = pk -> getOrigen();
     int ds = pk -> getDestino();
+    if(ds<100){
+        bubble("Dirección destino no válida");
+        return;
+    }
     cPacket *body = (cPacket *) pk->decapsulate();
 
     /*Crear el paquete y encapsular*/
-    Packet * sp = new Packet("free_sw",0);
-    //sp->setSrcAddr(origen);
-    //sp->setDestAddr(ds);
-    sp->setBitLength(header_tam);
-    sp->encapsulate(body);
+    Transport * tp = new Transport("free_sw",0);
+    tp->setSrcAddr(origen);
+    tp->setDstAddr(ds);
+    tp->setType(t_msg_t);
+    tp->setBitLength(header_tam);
+    tp->encapsulate(body);
 
     /*comprobar mandar o encolar*/
     if(state_machine == idle){
         /*no hay paquetes, mandar*/
-        send_pk(sp);
+        send_pk(tp);
     }
     else{
         /*mandando, encolar*/
         if(queue_tam<0){
             /*no hay limite*/
-            txQueue->insert(sp);
+            txQueue->insert(tp);
         }else{
             /*limite, comprobar*/
             if(txQueue->length()>=queue_tam){
                 /*no hay hueco*/
-                delete(sp);
+                bubble("Cola llena");
+                delete(tp);
             }else{
-                txQueue->insert(sp);
+                txQueue->insert(tp);
             }
         }
-
-
     }
 }
 
-void free_sw::arrivedPacket(Packet *pk){
+void free_sw::arrivedPacket(Transport *pk){
     /*recivido nuevo mensaje externo*/
     EV << " Arrived Packet";
     int r_seq = pk->getSeq();
-    //int sender = pk->getSrcAddr();
+    int sender = pk->getSrcAddr();
     if (pk->hasBitError())
     {
         EV << " Con error";
         //paquete con error
         bubble("message error");
-        if(r_seq==(rcv_seq+1)){
-            //el que se esperaba
-            //send_Nack(r_seq,sender);
-        }
-        /*Si es menor ya se ha recivido correctametne y se obvia*/
-        /*Si es mayor que el esperado se obvia*/
+        /*No se puede saber de si la secuencia es errónea, se envía un NACK con la secuencia esperada*/
+        send_Nack(r_seq,sender);
      }
      else
      {
@@ -295,12 +306,11 @@ void free_sw::arrivedPacket(Packet *pk){
          /*paquete sin errores comprobar secuencia*/
          if(r_seq==(rcv_seq+1)){
             //paquete correcto (secuencia esperada)
-            //send_Ack(++rcv_seq,sender);
+            send_Ack(++rcv_seq,sender);
             send_up(pk);
-            /*VIEJO*/
         }else if(r_seq<(rcv_seq+1)){
             /*En caso de recivir una secuencia menor se envia un ACK de la última (ACK acumulado)*/
-            //send_Ack(rcv_seq,sender);
+            send_Ack(rcv_seq,sender);
         }
         /*En caso de que el paquete llega desordenado (un sequencia mayor), se obvia*/
      }
@@ -313,18 +323,18 @@ void free_sw::send_Nack(int s_seq,int sender){
     /*creación del NACK*/
     char msgname[20];
     sprintf(msgname,"NACK-%d",s_seq);
-    Packet * pkt = new Packet(msgname,1);
+    Transport * pkt = new Transport(msgname,1);
     pkt->setBitLength(ack_tam);
     pkt->setType(t_nack_t);
     pkt->setSeq(s_seq);
-    //pkt->setSrcAddr(origen);
-    //pkt->setDestAddr(sender);
+    pkt->setSrcAddr(origen);
+    pkt->setDstAddr(sender);
 
     /*preparar el inter layer y mandarlo*/
     sprintf(msgname,"il_free_sw_NACK-%d",s_seq);
     inter_layer * il  = new inter_layer(msgname,0);
-    il->setOrigen(0);
-    il->setDestino(0);
+    il->setOrigen(origen);
+    il->setDestino(sender%10);
     il->setBitLength(0);
     il->encapsulate(pkt);
 
@@ -336,23 +346,23 @@ void free_sw::send_Nack(int s_seq,int sender){
 void free_sw::send_Ack(int s_seq,int sender)
 {
     EV << " Send Ack";
-    /*crear el Packet NACK el inter_layer y mandarlo*/
+    /*crear el Packet ACK el inter_layer y mandarlo*/
 
     /*creación del ACK*/
     char msgname[20];
     sprintf(msgname,"ACK-%d",s_seq);
-    Packet * pkt = new Packet(msgname,0);
+    Transport * pkt = new Transport(msgname,0);
     pkt->setBitLength(ack_tam);
     pkt->setType(t_ack_t);
     pkt->setSeq(s_seq);
-    //pkt->setSrcAddr(origen);
-    //pkt->setDestAddr(sender);
+    pkt->setSrcAddr(origen);
+    pkt->setDstAddr(sender);
 
     /*preparar el inter layer y mandarlo*/
     sprintf(msgname,"il_free_sw_ACK-%d",s_seq);
     inter_layer *il  = new inter_layer(msgname,0);
-    il->setOrigen(0);
-    il->setDestino(0);
+    il->setOrigen(origen);
+    il->setDestino(sender%10);
     il->setBitLength(0);
     il->encapsulate(pkt);
 
@@ -360,7 +370,7 @@ void free_sw::send_Ack(int s_seq,int sender)
     send(il,"down_out");
     emit(s_sndAck,++sndAck);
 }
-void free_sw::send_pk(Packet * pk){
+void free_sw::send_pk(Transport * pk){
     EV << " Sen pk";
    /* poner secuencia rellenar inter_layer y mandar*/
     /*crear copia en message*/
@@ -368,9 +378,8 @@ void free_sw::send_pk(Packet * pk){
     char msgname[20];
     sprintf(msgname,"il_free_sw-%d",sent_seq);
     inter_layer *il = new inter_layer(msgname,0);
-    il->setOrigen(0);
-    il->setDestino(0);
-    il->setBitLength(0);
+    il->setOrigen(origen);
+    il->setDestino((pk->getDstAddr())%10);
     il->encapsulate(pk);
     delete(message);
     message = il->dup();
@@ -381,10 +390,17 @@ void free_sw::send_pk(Packet * pk){
     scheduleAt(simTime()+time_out,time);
 }
 
-void free_sw::send_up(Packet * pk){
-    /*Desencapsular y mandar*/
-    Packet *up = (Packet * )pk->decapsulate();
-    send(up,"up_out");
+void free_sw::send_up(Transport * pk){
+    /*Desencapsular y subir*/
+    if(pk->hasEncapsulatedPacket()){
+        cPacket *up = (cPacket * )pk->decapsulate();
+        int orig = pk->getSrcAddr();
+        inter_layer * il = new inter_layer("TransprotILup",0);
+        il->setOrigen(orig);
+        il->setDestino(origen);
+        il->encapsulate(up);
+        send(il,"up_out");
+    }
 }
 
 

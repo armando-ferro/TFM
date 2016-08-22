@@ -28,10 +28,12 @@ network GoBackN
             @display("p=45,33");
             pktSize = exponential(70bit);
             delayTime = exponential(30s);
+            Dst_Addr = 100;
         }
         gbn: free_gbn {
             @display("p=45,107");
             Ack_Tam = 1;
+            Addr = 101;
         }
         fisico: fisico {
             @display("p=45,190");
@@ -42,6 +44,7 @@ network GoBackN
         gbn1: free_gbn {
             @display("p=539,107");
             Ack_Tam = 1;
+            Addr = 100;
         }
         dump: dump {
             @display("p=539,33");

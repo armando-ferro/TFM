@@ -15,12 +15,12 @@ network StopAndWait
     submodules:
         injector: injector {
             @display("p=45,33");
-            Dst_Addr = 1;
+            Dst_Addr = 100;
             delayTime = exponential(30s);
         }
         sw: free_sw {
             @display("p=45,107");
-            Addr = 0;
+            Addr = 101;
         }
         fisico: fisico {
             @display("p=45,190");
@@ -31,7 +31,7 @@ network StopAndWait
         }
         sw1: free_sw {
             @display("p=539,107");
-            Addr = 1;
+            Addr = 100;
         }
         dump: dump {
             @display("p=539,33");
