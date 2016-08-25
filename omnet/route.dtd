@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!ELEMENT routes (route+)>
+<!ELEMENT route (gateway+)>
+<!ATTLIST route
+	start CDATA #REQUIRED
+	stop CDATA #REQUIRED	
+>
+<!ELEMENT gateway EMPTY>
+<!ATTLIST gateway
+	id CDATA #REQUIRED
+	prob CDATA "1"
+>

@@ -14,55 +14,61 @@
 //
 
 
+
 network Pruebas
 {
-    @display("bgb=826,265");
+    @display("bgb=621,372");
     types:
         channel C extends ned.DatarateChannel
         {
             datarate = 1bps;
-            per = 0.1;
+            per = 0;
             delay = 1s;
         }
     submodules:
-        injector: injector {
-            @display("p=67,33");
-            pktSize = exponential(70bit);
+
+        host0: InOut2SW {
+            @display("p=172,77");
+            Addr = 00;
+            Dst_Addr = 103;
+            n_Pkt = 10;
             delayTime = 30s;
-            n_Pkt = 1000;
+            pktSize = 20bit;
         }
-        dump: dump {
-            @display("p=510,33");
+        host1: InOut2SW {
+            @display("p=511,77");
+            Addr = 01;
+            Dst_Addr = 102;
+            n_Pkt = 10;
+            delayTime = 30s;
+            pktSize = 20bit;
         }
-        dump1: dump {
-            @display("p=165,33");
+        host2: InOut2SW {
+            @display("p=172,247");
+            Addr = 02;
+            Dst_Addr = 101;
+            n_Pkt = 10;
+            delayTime = 30s;
+            pktSize = 20bit;
         }
-        injector1: injector {
-            @display("p=610,33");
-            n_Pkt = 1000;
-        }
-        receiverACK: receiverACK {
-            @display("p=510,136");
-        }
-        receiverACK1: receiverACK {
-            @display("p=165,194;b=7,5");
-        }
-        senderGBN: senderGBN {
-            @display("p=67,136");
-        }
-        senderSW: senderSW {
-            @display("p=610,194");
+        host3: InOut2SW {
+            @display("p=511,247");
+            Addr = 03;
+            Dst_Addr = 100;
+            n_Pkt = 10;
+            delayTime = 30s;
+            pktSize = 20bit;
         }
     connections:
-        
-        injector.down_out-->senderGBN.up_in;
-        senderGBN.out-->C-->receiverACK.in;
-        receiverACK.out-->C-->senderGBN.in;
-        receiverACK.up_out-->dump.down_in;
-        
-        injector1.down_out-->senderSW.up_in;
-        senderSW.out-->C-->receiverACK1.in;
-        receiverACK1.out-->C-->senderSW.in;
-        receiverACK1.up_out-->dump1.down_in;
-        
+        host0.out1 --> C --> host1.in1;
+        host1.out1 --> C --> host0.in1;
+
+        host1.out2 --> C --> host3.in2;
+        host3.out2 --> C --> host1.in2;
+
+        host3.out1 --> C --> host2.in1;
+        host2.out1 --> C --> host3.in1;
+
+        host0.out2 --> C --> host2.in2;
+        host2.out2 --> C --> host0.in2;
 }

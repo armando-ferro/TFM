@@ -83,6 +83,7 @@ void injector::handleMessage(cMessage *msg){
         /*Generar el inter_layer y mandarlo*/
         inter_layer * il = new inter_layer("injector_il",0);
         il->setDestino(dest);
+        il->setProtocol(p_application);
         il->encapsulate(pkt);
         send(il,"down_out");
         delay = par("delayTime");

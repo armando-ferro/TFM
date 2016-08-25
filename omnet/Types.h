@@ -28,6 +28,17 @@ const short a_msg_t = 0;
 const short a_ack_t = 1;
 const short a_nack_t = 2;
 
+/*protocols*/
+const short p_application = 0;
+const short p_transport = 1;
+const short p_network = 2;
+
+/*limites de direcciones*/
+const short min_net = 0;
+const short max_net = 99;
+const short min_trans = 100;
+const short max_trans = 999;
+
 
 
 #endif /* TYPES_H_ */

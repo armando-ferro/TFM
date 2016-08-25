@@ -119,7 +119,10 @@ void fisico::initialize(){
     /*mensaje que indica cuando se ha terminado de enviar un packete*/
     sent = new cMessage("sent");
     /*Canal de salida*/
-    txChannel = gate("out")->getTransmissionChannel();
+    if(gate("out")->isConnected()){
+        txChannel = gate("out")->getTransmissionChannel();
+    }
+
 
     WATCH(state_machine);
     WATCH(max_state);

@@ -1,5 +1,5 @@
 //
-// Generated file, do not edit! Created by nedtool 4.6 from Inter_Layer.msg.
+// Generated file, do not edit! Created by nedtool 4.6 from Network.msg.
 //
 
 // Disable warnings about unused variables, empty switch stmts, etc:
@@ -10,7 +10,7 @@
 
 #include <iostream>
 #include <sstream>
-#include "Inter_Layer_m.h"
+#include "Network_m.h"
 
 USING_NAMESPACE
 
@@ -53,25 +53,27 @@ inline std::ostream& operator<<(std::ostream& out, const std::vector<T,A>& vec)
 template<typename T>
 inline std::ostream& operator<<(std::ostream& out,const T&) {return out;}
 
-Register_Class(inter_layer);
+Register_Class(Network);
 
-inter_layer::inter_layer(const char *name, int kind) : ::cPacket(name,kind)
+Network::Network(const char *name, int kind) : ::cPacket(name,kind)
 {
-    this->origen_var = 0;
-    this->destino_var = 0;
+    this->srcAddr_var = 0;
+    this->dstAddr_var = 0;
+    this->hopCount_var = 0;
+    this->hopLimit_var = 0;
     this->protocol_var = 0;
 }
 
-inter_layer::inter_layer(const inter_layer& other) : ::cPacket(other)
+Network::Network(const Network& other) : ::cPacket(other)
 {
     copy(other);
 }
 
-inter_layer::~inter_layer()
+Network::~Network()
 {
 }
 
-inter_layer& inter_layer::operator=(const inter_layer& other)
+Network& Network::operator=(const Network& other)
 {
     if (this==&other) return *this;
     ::cPacket::operator=(other);
@@ -79,64 +81,90 @@ inter_layer& inter_layer::operator=(const inter_layer& other)
     return *this;
 }
 
-void inter_layer::copy(const inter_layer& other)
+void Network::copy(const Network& other)
 {
-    this->origen_var = other.origen_var;
-    this->destino_var = other.destino_var;
+    this->srcAddr_var = other.srcAddr_var;
+    this->dstAddr_var = other.dstAddr_var;
+    this->hopCount_var = other.hopCount_var;
+    this->hopLimit_var = other.hopLimit_var;
     this->protocol_var = other.protocol_var;
 }
 
-void inter_layer::parsimPack(cCommBuffer *b)
+void Network::parsimPack(cCommBuffer *b)
 {
     ::cPacket::parsimPack(b);
-    doPacking(b,this->origen_var);
-    doPacking(b,this->destino_var);
+    doPacking(b,this->srcAddr_var);
+    doPacking(b,this->dstAddr_var);
+    doPacking(b,this->hopCount_var);
+    doPacking(b,this->hopLimit_var);
     doPacking(b,this->protocol_var);
 }
 
-void inter_layer::parsimUnpack(cCommBuffer *b)
+void Network::parsimUnpack(cCommBuffer *b)
 {
     ::cPacket::parsimUnpack(b);
-    doUnpacking(b,this->origen_var);
-    doUnpacking(b,this->destino_var);
+    doUnpacking(b,this->srcAddr_var);
+    doUnpacking(b,this->dstAddr_var);
+    doUnpacking(b,this->hopCount_var);
+    doUnpacking(b,this->hopLimit_var);
     doUnpacking(b,this->protocol_var);
 }
 
-int inter_layer::getOrigen() const
+int Network::getSrcAddr() const
 {
-    return origen_var;
+    return srcAddr_var;
 }
 
-void inter_layer::setOrigen(int origen)
+void Network::setSrcAddr(int srcAddr)
 {
-    this->origen_var = origen;
+    this->srcAddr_var = srcAddr;
 }
 
-int inter_layer::getDestino() const
+int Network::getDstAddr() const
 {
-    return destino_var;
+    return dstAddr_var;
 }
 
-void inter_layer::setDestino(int destino)
+void Network::setDstAddr(int dstAddr)
 {
-    this->destino_var = destino;
+    this->dstAddr_var = dstAddr;
 }
 
-int inter_layer::getProtocol() const
+int Network::getHopCount() const
+{
+    return hopCount_var;
+}
+
+void Network::setHopCount(int hopCount)
+{
+    this->hopCount_var = hopCount;
+}
+
+int Network::getHopLimit() const
+{
+    return hopLimit_var;
+}
+
+void Network::setHopLimit(int hopLimit)
+{
+    this->hopLimit_var = hopLimit;
+}
+
+unsigned short Network::getProtocol() const
 {
     return protocol_var;
 }
 
-void inter_layer::setProtocol(int protocol)
+void Network::setProtocol(unsigned short protocol)
 {
     this->protocol_var = protocol;
 }
 
-class inter_layerDescriptor : public cClassDescriptor
+class NetworkDescriptor : public cClassDescriptor
 {
   public:
-    inter_layerDescriptor();
-    virtual ~inter_layerDescriptor();
+    NetworkDescriptor();
+    virtual ~NetworkDescriptor();
 
     virtual bool doesSupport(cObject *obj) const;
     virtual const char *getProperty(const char *propertyname) const;
@@ -155,34 +183,34 @@ class inter_layerDescriptor : public cClassDescriptor
     virtual void *getFieldStructPointer(void *object, int field, int i) const;
 };
 
-Register_ClassDescriptor(inter_layerDescriptor);
+Register_ClassDescriptor(NetworkDescriptor);
 
-inter_layerDescriptor::inter_layerDescriptor() : cClassDescriptor("inter_layer", "cPacket")
+NetworkDescriptor::NetworkDescriptor() : cClassDescriptor("Network", "cPacket")
 {
 }
 
-inter_layerDescriptor::~inter_layerDescriptor()
+NetworkDescriptor::~NetworkDescriptor()
 {
 }
 
-bool inter_layerDescriptor::doesSupport(cObject *obj) const
+bool NetworkDescriptor::doesSupport(cObject *obj) const
 {
-    return dynamic_cast<inter_layer *>(obj)!=NULL;
+    return dynamic_cast<Network *>(obj)!=NULL;
 }
 
-const char *inter_layerDescriptor::getProperty(const char *propertyname) const
+const char *NetworkDescriptor::getProperty(const char *propertyname) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
     return basedesc ? basedesc->getProperty(propertyname) : NULL;
 }
 
-int inter_layerDescriptor::getFieldCount(void *object) const
+int NetworkDescriptor::getFieldCount(void *object) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 3+basedesc->getFieldCount(object) : 3;
+    return basedesc ? 5+basedesc->getFieldCount(object) : 5;
 }
 
-unsigned int inter_layerDescriptor::getFieldTypeFlags(void *object, int field) const
+unsigned int NetworkDescriptor::getFieldTypeFlags(void *object, int field) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -194,11 +222,13 @@ unsigned int inter_layerDescriptor::getFieldTypeFlags(void *object, int field) c
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<3) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<5) ? fieldTypeFlags[field] : 0;
 }
 
-const char *inter_layerDescriptor::getFieldName(void *object, int field) const
+const char *NetworkDescriptor::getFieldName(void *object, int field) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -207,24 +237,28 @@ const char *inter_layerDescriptor::getFieldName(void *object, int field) const
         field -= basedesc->getFieldCount(object);
     }
     static const char *fieldNames[] = {
-        "origen",
-        "destino",
+        "srcAddr",
+        "dstAddr",
+        "hopCount",
+        "hopLimit",
         "protocol",
     };
-    return (field>=0 && field<3) ? fieldNames[field] : NULL;
+    return (field>=0 && field<5) ? fieldNames[field] : NULL;
 }
 
-int inter_layerDescriptor::findField(void *object, const char *fieldName) const
+int NetworkDescriptor::findField(void *object, const char *fieldName) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
     int base = basedesc ? basedesc->getFieldCount(object) : 0;
-    if (fieldName[0]=='o' && strcmp(fieldName, "origen")==0) return base+0;
-    if (fieldName[0]=='d' && strcmp(fieldName, "destino")==0) return base+1;
-    if (fieldName[0]=='p' && strcmp(fieldName, "protocol")==0) return base+2;
+    if (fieldName[0]=='s' && strcmp(fieldName, "srcAddr")==0) return base+0;
+    if (fieldName[0]=='d' && strcmp(fieldName, "dstAddr")==0) return base+1;
+    if (fieldName[0]=='h' && strcmp(fieldName, "hopCount")==0) return base+2;
+    if (fieldName[0]=='h' && strcmp(fieldName, "hopLimit")==0) return base+3;
+    if (fieldName[0]=='p' && strcmp(fieldName, "protocol")==0) return base+4;
     return basedesc ? basedesc->findField(object, fieldName) : -1;
 }
 
-const char *inter_layerDescriptor::getFieldTypeString(void *object, int field) const
+const char *NetworkDescriptor::getFieldTypeString(void *object, int field) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -236,11 +270,13 @@ const char *inter_layerDescriptor::getFieldTypeString(void *object, int field) c
         "int",
         "int",
         "int",
+        "int",
+        "unsigned short",
     };
-    return (field>=0 && field<3) ? fieldTypeStrings[field] : NULL;
+    return (field>=0 && field<5) ? fieldTypeStrings[field] : NULL;
 }
 
-const char *inter_layerDescriptor::getFieldProperty(void *object, int field, const char *propertyname) const
+const char *NetworkDescriptor::getFieldProperty(void *object, int field, const char *propertyname) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -253,7 +289,7 @@ const char *inter_layerDescriptor::getFieldProperty(void *object, int field, con
     }
 }
 
-int inter_layerDescriptor::getArraySize(void *object, int field) const
+int NetworkDescriptor::getArraySize(void *object, int field) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -261,13 +297,13 @@ int inter_layerDescriptor::getArraySize(void *object, int field) const
             return basedesc->getArraySize(object, field);
         field -= basedesc->getFieldCount(object);
     }
-    inter_layer *pp = (inter_layer *)object; (void)pp;
+    Network *pp = (Network *)object; (void)pp;
     switch (field) {
         default: return 0;
     }
 }
 
-std::string inter_layerDescriptor::getFieldAsString(void *object, int field, int i) const
+std::string NetworkDescriptor::getFieldAsString(void *object, int field, int i) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -275,16 +311,18 @@ std::string inter_layerDescriptor::getFieldAsString(void *object, int field, int
             return basedesc->getFieldAsString(object,field,i);
         field -= basedesc->getFieldCount(object);
     }
-    inter_layer *pp = (inter_layer *)object; (void)pp;
+    Network *pp = (Network *)object; (void)pp;
     switch (field) {
-        case 0: return long2string(pp->getOrigen());
-        case 1: return long2string(pp->getDestino());
-        case 2: return long2string(pp->getProtocol());
+        case 0: return long2string(pp->getSrcAddr());
+        case 1: return long2string(pp->getDstAddr());
+        case 2: return long2string(pp->getHopCount());
+        case 3: return long2string(pp->getHopLimit());
+        case 4: return ulong2string(pp->getProtocol());
         default: return "";
     }
 }
 
-bool inter_layerDescriptor::setFieldAsString(void *object, int field, int i, const char *value) const
+bool NetworkDescriptor::setFieldAsString(void *object, int field, int i, const char *value) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -292,16 +330,18 @@ bool inter_layerDescriptor::setFieldAsString(void *object, int field, int i, con
             return basedesc->setFieldAsString(object,field,i,value);
         field -= basedesc->getFieldCount(object);
     }
-    inter_layer *pp = (inter_layer *)object; (void)pp;
+    Network *pp = (Network *)object; (void)pp;
     switch (field) {
-        case 0: pp->setOrigen(string2long(value)); return true;
-        case 1: pp->setDestino(string2long(value)); return true;
-        case 2: pp->setProtocol(string2long(value)); return true;
+        case 0: pp->setSrcAddr(string2long(value)); return true;
+        case 1: pp->setDstAddr(string2long(value)); return true;
+        case 2: pp->setHopCount(string2long(value)); return true;
+        case 3: pp->setHopLimit(string2long(value)); return true;
+        case 4: pp->setProtocol(string2ulong(value)); return true;
         default: return false;
     }
 }
 
-const char *inter_layerDescriptor::getFieldStructName(void *object, int field) const
+const char *NetworkDescriptor::getFieldStructName(void *object, int field) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -314,7 +354,7 @@ const char *inter_layerDescriptor::getFieldStructName(void *object, int field) c
     };
 }
 
-void *inter_layerDescriptor::getFieldStructPointer(void *object, int field, int i) const
+void *NetworkDescriptor::getFieldStructPointer(void *object, int field, int i) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
     if (basedesc) {
@@ -322,7 +362,7 @@ void *inter_layerDescriptor::getFieldStructPointer(void *object, int field, int 
             return basedesc->getFieldStructPointer(object, field, i);
         field -= basedesc->getFieldCount(object);
     }
-    inter_layer *pp = (inter_layer *)object; (void)pp;
+    Network *pp = (Network *)object; (void)pp;
     switch (field) {
         default: return NULL;
     }

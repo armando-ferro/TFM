@@ -22,6 +22,7 @@
  * {
  *     int origen;		//dirección origen de la capa superior o inferior (superior en caso de descenso inferior en caso de ascenso)
  *     int destino;	//dirección destino de la capa inferior en todo memento
+ *     int protocol;
  * 
  * }
  * </pre>
@@ -31,6 +32,7 @@ class inter_layer : public ::cPacket
   protected:
     int origen_var;
     int destino_var;
+    int protocol_var;
 
   private:
     void copy(const inter_layer& other);
@@ -53,6 +55,8 @@ class inter_layer : public ::cPacket
     virtual void setOrigen(int origen);
     virtual int getDestino() const;
     virtual void setDestino(int destino);
+    virtual int getProtocol() const;
+    virtual void setProtocol(int protocol);
 };
 
 inline void doPacking(cCommBuffer *b, inter_layer& obj) {obj.parsimPack(b);}

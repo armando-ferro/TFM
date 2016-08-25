@@ -30,7 +30,7 @@ private:
     Link *message;  // message that has to be re-sent on error
     cMessage *sent;
     int rpt;
-    int ack_seq,sent_seq;
+    unsigned int ack_seq,sent_seq;
     cChannel * txChannel;
     cQueue *txQueue;
     /*Señales*/
@@ -38,8 +38,8 @@ private:
     simsignal_t s_rcvAck;
     simsignal_t s_rcvNack;
     /*control*/
-    int rcvAck;
-    int rcvNack;
+    unsigned int rcvAck;
+    unsigned int rcvNack;
     /*Maquina de estados y estado*/
     short state_machine;
 public:
@@ -151,7 +151,7 @@ void senderSW::handleMessage(cMessage *msg){
             {
                 EV << " ACK";
                 /*ACK*/
-                int r_seq = pk->getSeq();
+                unsigned int r_seq = pk->getSeq();
                 if(r_seq == sent_seq){
                     rpt=0;
                     ack_seq=r_seq;

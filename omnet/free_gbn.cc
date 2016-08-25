@@ -376,6 +376,7 @@ void free_gbn::send_Nack(int s_seq,int dest){
     inter_layer * il  = new inter_layer(msgname,0);
     il->setOrigen(origen);
     il->setDestino(dest%10);
+    il->setProtocol(p_transport);
     il->setBitLength(0);
     il->encapsulate(pkt);
 
@@ -404,6 +405,7 @@ void free_gbn::send_Ack(int s_seq, int dest)
     inter_layer *il  = new inter_layer(msgname,0);
     il->setOrigen(origen);
     il->setDestino(dest%10);
+    il->setProtocol(p_transport);
     il->setBitLength(0);
     il->encapsulate(pkt);
 
@@ -421,6 +423,7 @@ void free_gbn::send_pk(Transport * pk){
     inter_layer *il = new inter_layer(msgname,0);
     il->setOrigen(origen);
     il->setDestino((pk->getDstAddr())%10);
+    il->setProtocol(p_transport);
     il->encapsulate(pk);
     /*Preparar el temporizador si es necesario*/
     if(ackQueue->length()==0){
