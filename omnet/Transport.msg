@@ -5,6 +5,6 @@ packet Transport
 {
     unsigned int seq;
    	unsigned short type;
-    int srcAddr;
-    int dstAddr;
+    unsigned short srcAddr;
+    unsigned short dstAddr;
 }

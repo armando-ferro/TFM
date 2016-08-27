@@ -108,12 +108,12 @@ void Link::setSeq(unsigned int seq)
     this->seq_var = seq;
 }
 
-unsigned int Link::getType() const
+unsigned short Link::getType() const
 {
     return type_var;
 }
 
-void Link::setType(unsigned int type)
+void Link::setType(unsigned short type)
 {
     this->type_var = type;
 }
@@ -217,7 +217,7 @@ const char *LinkDescriptor::getFieldTypeString(void *object, int field) const
     }
     static const char *fieldTypeStrings[] = {
         "unsigned int",
-        "unsigned int",
+        "unsigned short",
     };
     return (field>=0 && field<2) ? fieldTypeStrings[field] : NULL;
 }

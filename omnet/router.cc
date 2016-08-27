@@ -314,8 +314,8 @@ int router::config(cXMLElement *xml){
        gate_tmp = tmp->getFirstChild();
        for(ig=0,p=0;ig<ng;ig++,gate_tmp = gate_tmp->getNextSibling()){
            routes[i].gates[ig].gate = atoi(gate_tmp->getAttribute("id"));
-           if(routes[i].gates[ig].gate > max){
-               EV << "Solo hay 10 salidas";
+           if(routes[i].gates[ig].gate >= max){
+               EV << "Solo hay "<< max <<" salidas";
                return -1;
            }
            if(not(down_out[routes[i].gates[ig].gate])){
@@ -418,9 +418,9 @@ void router::send_up(Network *nw){
         }
         default:
             bubble("Protocolo no válido");
-            delete(nw);
             break;
     }
+    delete(nw);
 }
 
 

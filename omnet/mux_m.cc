@@ -94,12 +94,12 @@ void Mux::parsimUnpack(cCommBuffer *b)
     doUnpacking(b,this->line_var);
 }
 
-short Mux::getLine() const
+unsigned short Mux::getLine() const
 {
     return line_var;
 }
 
-void Mux::setLine(short line)
+void Mux::setLine(unsigned short line)
 {
     this->line_var = line;
 }
@@ -199,7 +199,7 @@ const char *MuxDescriptor::getFieldTypeString(void *object, int field) const
         field -= basedesc->getFieldCount(object);
     }
     static const char *fieldTypeStrings[] = {
-        "short",
+        "unsigned short",
     };
     return (field>=0 && field<1) ? fieldTypeStrings[field] : NULL;
 }
@@ -241,7 +241,7 @@ std::string MuxDescriptor::getFieldAsString(void *object, int field, int i) cons
     }
     Mux *pp = (Mux *)object; (void)pp;
     switch (field) {
-        case 0: return long2string(pp->getLine());
+        case 0: return ulong2string(pp->getLine());
         default: return "";
     }
 }
@@ -256,7 +256,7 @@ bool MuxDescriptor::setFieldAsString(void *object, int field, int i, const char 
     }
     Mux *pp = (Mux *)object; (void)pp;
     switch (field) {
-        case 0: pp->setLine(string2long(value)); return true;
+        case 0: pp->setLine(string2ulong(value)); return true;
         default: return false;
     }
 }

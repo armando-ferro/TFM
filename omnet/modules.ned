@@ -237,10 +237,21 @@ simple mux
 {
     parameters:
         @display("i=block/join");
-        xml config = default(xmldoc("pr.xml"));
+        xml config = default(xmldoc("mux.xml"));
     gates:
         output out;
-        input in[10] @loose;
+        input in[] @loose;
+
+}
+
+simple demux
+{
+    parameters:
+        @display("i=block/join");
+        xml config = default(xmldoc("demux.xml"));
+    gates:
+        output out[];
+        input in;
 
 }
 
@@ -270,9 +281,6 @@ module mux3_1
         mux: mux {
             @display("p=120,120");
         }
-        m_out: fisico {
-            @display("p=190,120");
-        }
     connections:
         in1 --> m_in1.in;
         in2 --> m_in2.in;
@@ -280,8 +288,43 @@ module mux3_1
         m_in1.up_out --> mux.in++;
         m_in2.up_out --> mux.in++;
         m_in3.up_out --> mux.in++;
-        mux.out --> m_out.up_in;
-        m_out.out --> out;
+        mux.out -->out;
+}
+
+module demux1_3
+{
+    parameters:
+        int Out_Queue_Length = default(-1);
+        @display("bgb=240,240");
+    gates:
+        output out1;
+        output out2;
+        output out3;
+        input in;
+    submodules:
+        m_out1: fisico {
+
+            @display("p=50,60");
+        }
+
+        m_out2: fisico {
+            @display("p=50,120");
+        }
+
+        m_out3: fisico {
+            @display("p=50,170");
+        }
+        demux: demux {
+            @display("p=120,120");
+        }
+    connections:
+        in-->demux.in;
+        demux.out++-->m_out1.up_in;
+        demux.out++-->m_out2.up_in;
+        demux.out++-->m_out3.up_in;
+        m_out1.out-->out1;
+        m_out2.out-->out2;
+        m_out3.out-->out3;        
 }
 
 
@@ -325,6 +368,90 @@ module InOut2SW
             Ack_Tam = T_Ack_Tam;
             Time_Out = T_Time_Out;
             Queue_Tam = T_Queue_Length;
+            @display("p=178,151");
+        }
+        router: router {
+            Addr = Addr;
+            Hop_Limit = N_Hop_Limit;
+            Header_Tam = N_Header_Tam;
+            Config_File = Config_File;
+            @display("p=178,244");
+        }
+        if1: fisico {
+            Queue_Length = L_Queue_Length;
+            Header_Tam = L_Header_Tam;
+            @display("p=105,348");
+        }
+        if2: fisico {
+            Queue_Length = L_Queue_Length;
+            Header_Tam = L_Header_Tam;
+            @display("p=259,348");
+        }
+    connections:
+		
+		injector.down_out-->transport.up_in;
+		transport.up_out-->dump.down_in;
+		
+		transport.down_out-->router.up_in[1];
+		router.up_out[1]-->transport.down_in;
+		
+		router.down_out[1]-->if1.up_in;
+		if1.up_out-->router.down_in[1];
+		
+		router.down_out[2]-->if2.up_in;
+		if2.up_out-->router.down_in[2];
+		
+		if1.out-->out1;
+		if2.out-->out2;
+		
+		in1-->if1.in;
+		in2-->if2.in;
+
+}
+
+
+module InOut2GBN
+{
+    parameters:
+        int Addr = default(00);
+        xml Config_File = default(xmldoc("pr.xml"));
+        int L_Queue_Length = default(-1);
+        int T_Queue_Length = default(-1);
+        int T_Time_Out = default(100);
+        int Dst_Addr = default(100);
+        int n_Pkt = default(-1);
+        int L_Header_Tam = default(0);
+        int N_Header_Tam = default(0);
+        int T_Header_Tam = default(0);
+        int T_Ack_Tam = default(0);
+        int N_Hop_Limit = default(10);
+        int T_Window_Length = default(3);
+
+        volatile double delayTime @unit(s) = default(30s);   // delay before sending back message
+        volatile double pktSize @unit(bit) = default(70bit);
+    gates:
+        input in1 @loose;
+        input in2 @loose;
+        output out1 @loose;
+        output out2 @loose;
+    submodules:
+        injector: injector {
+            Dst_Addr = Dst_Addr;
+            n_Pkt = n_Pkt;
+            delayTime = delayTime;
+            pktSize = pktSize;
+            @display("p=105,58");
+        }
+        dump: dump {
+            @display("p=259,58");
+        }
+        transport: free_gbn {
+            Addr = 100+Addr;
+            Header_Tam = T_Header_Tam;
+            Ack_Tam = T_Ack_Tam;
+            Time_Out = T_Time_Out;
+            Queue_Tam = T_Queue_Length;
+            Window_Tam = T_Window_Length;
             @display("p=178,151");
         }
         router: router {

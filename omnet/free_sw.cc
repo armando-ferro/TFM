@@ -199,6 +199,7 @@ void free_sw::handleMessage(cMessage *msg)
                     ack_seq = tp->getSeq();
                     if(ack_seq == sent_seq){
                         /*ACK correcto*/
+                        cancelEvent(time);
                         /*comprobar cola*/
                         if(txQueue->empty()){
                             /*no hay mensajes, se espera otro*/

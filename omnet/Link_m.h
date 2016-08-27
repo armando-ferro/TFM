@@ -24,7 +24,7 @@
  * packet Link
  * {
  *     unsigned int seq;
- *     unsigned int type;
+ *     unsigned short type;
  * }
  * </pre>
  */
@@ -32,7 +32,7 @@ class Link : public ::cPacket
 {
   protected:
     unsigned int seq_var;
-    unsigned int type_var;
+    unsigned short type_var;
 
   private:
     void copy(const Link& other);
@@ -53,8 +53,8 @@ class Link : public ::cPacket
     // field getter/setter methods
     virtual unsigned int getSeq() const;
     virtual void setSeq(unsigned int seq);
-    virtual unsigned int getType() const;
-    virtual void setType(unsigned int type);
+    virtual unsigned short getType() const;
+    virtual void setType(unsigned short type);
 };
 
 inline void doPacking(cCommBuffer *b, Link& obj) {obj.parsimPack(b);}

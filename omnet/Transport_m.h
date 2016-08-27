@@ -25,8 +25,8 @@
  * {
  *     unsigned int seq;
  *     unsigned short type;
- *     int srcAddr;
- *     int dstAddr;
+ *     unsigned short srcAddr;
+ *     unsigned short dstAddr;
  * }
  * </pre>
  */
@@ -35,8 +35,8 @@ class Transport : public ::cPacket
   protected:
     unsigned int seq_var;
     unsigned short type_var;
-    int srcAddr_var;
-    int dstAddr_var;
+    unsigned short srcAddr_var;
+    unsigned short dstAddr_var;
 
   private:
     void copy(const Transport& other);
@@ -59,10 +59,10 @@ class Transport : public ::cPacket
     virtual void setSeq(unsigned int seq);
     virtual unsigned short getType() const;
     virtual void setType(unsigned short type);
-    virtual int getSrcAddr() const;
-    virtual void setSrcAddr(int srcAddr);
-    virtual int getDstAddr() const;
-    virtual void setDstAddr(int dstAddr);
+    virtual unsigned short getSrcAddr() const;
+    virtual void setSrcAddr(unsigned short srcAddr);
+    virtual unsigned short getDstAddr() const;
+    virtual void setDstAddr(unsigned short dstAddr);
 };
 
 inline void doPacking(cCommBuffer *b, Transport& obj) {obj.parsimPack(b);}

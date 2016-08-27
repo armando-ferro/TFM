@@ -20,14 +20,14 @@
  * <pre>
  * packet Mux
  * {
- *     short line;
+ *     unsigned short line;
  * }
  * </pre>
  */
 class Mux : public ::cPacket
 {
   protected:
-    short line_var;
+    unsigned short line_var;
 
   private:
     void copy(const Mux& other);
@@ -46,8 +46,8 @@ class Mux : public ::cPacket
     virtual void parsimUnpack(cCommBuffer *b);
 
     // field getter/setter methods
-    virtual short getLine() const;
-    virtual void setLine(short line);
+    virtual unsigned short getLine() const;
+    virtual void setLine(unsigned short line);
 };
 
 inline void doPacking(cCommBuffer *b, Mux& obj) {obj.parsimPack(b);}

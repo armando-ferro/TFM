@@ -3,9 +3,9 @@
 //
 packet Network
 {
-    int srcAddr;
-    int dstAddr;
-    int hopCount;
-    int hopLimit;
+    unsigned short srcAddr;
+    unsigned short dstAddr;
+    unsigned int hopCount;
+    unsigned int hopLimit;
     unsigned short protocol;
 }

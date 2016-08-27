@@ -4,5 +4,5 @@
 packet Link
 {
     unsigned int seq;
-    unsigned int type;
+    unsigned short type;
 }

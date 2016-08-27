@@ -35,6 +35,7 @@ private:
     cQueue *txQueue;
     cChannel * txChannel;
     cMessage *sent;
+    bool b_config;
     /*extracción de estadísticas*/
     int sndBit;
     int sndPkt;
@@ -87,6 +88,8 @@ fisico::fisico() {
     s_lostPkt = 0;
     s_errorPkt = 0;
 
+    b_config = true;
+
     WATCH(max_state);
 }
 
@@ -121,11 +124,14 @@ void fisico::initialize(){
     /*Canal de salida*/
     if(gate("out")->isConnected()){
         txChannel = gate("out")->getTransmissionChannel();
+    }else{
+        b_config = false;
     }
 
 
     WATCH(state_machine);
     WATCH(max_state);
+    WATCH(b_config);
 }
 
 void fisico::handleMessage(cMessage *msg){
@@ -144,6 +150,11 @@ void fisico::handleMessage(cMessage *msg){
         /*comprobar si es de capa superior o exterior*/
         if(msg->arrivedOn("up_in")){
             /*capa superior, extraer comprobar estado*/
+            if(not(b_config)){
+                bubble("Imposible mandar mensajes, no conectado");
+                delete(msg);
+                return;
+            }
             inter_layer *rx = check_and_cast<inter_layer *>(msg);
             cPacket *pk;
             if(rx->hasEncapsulatedPacket()){

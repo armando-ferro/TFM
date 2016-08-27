@@ -126,22 +126,22 @@ void Transport::setType(unsigned short type)
     this->type_var = type;
 }
 
-int Transport::getSrcAddr() const
+unsigned short Transport::getSrcAddr() const
 {
     return srcAddr_var;
 }
 
-void Transport::setSrcAddr(int srcAddr)
+void Transport::setSrcAddr(unsigned short srcAddr)
 {
     this->srcAddr_var = srcAddr;
 }
 
-int Transport::getDstAddr() const
+unsigned short Transport::getDstAddr() const
 {
     return dstAddr_var;
 }
 
-void Transport::setDstAddr(int dstAddr)
+void Transport::setDstAddr(unsigned short dstAddr)
 {
     this->dstAddr_var = dstAddr;
 }
@@ -252,8 +252,8 @@ const char *TransportDescriptor::getFieldTypeString(void *object, int field) con
     static const char *fieldTypeStrings[] = {
         "unsigned int",
         "unsigned short",
-        "int",
-        "int",
+        "unsigned short",
+        "unsigned short",
     };
     return (field>=0 && field<4) ? fieldTypeStrings[field] : NULL;
 }
@@ -297,8 +297,8 @@ std::string TransportDescriptor::getFieldAsString(void *object, int field, int i
     switch (field) {
         case 0: return ulong2string(pp->getSeq());
         case 1: return ulong2string(pp->getType());
-        case 2: return long2string(pp->getSrcAddr());
-        case 3: return long2string(pp->getDstAddr());
+        case 2: return ulong2string(pp->getSrcAddr());
+        case 3: return ulong2string(pp->getDstAddr());
         default: return "";
     }
 }
@@ -315,8 +315,8 @@ bool TransportDescriptor::setFieldAsString(void *object, int field, int i, const
     switch (field) {
         case 0: pp->setSeq(string2ulong(value)); return true;
         case 1: pp->setType(string2ulong(value)); return true;
-        case 2: pp->setSrcAddr(string2long(value)); return true;
-        case 3: pp->setDstAddr(string2long(value)); return true;
+        case 2: pp->setSrcAddr(string2ulong(value)); return true;
+        case 3: pp->setDstAddr(string2ulong(value)); return true;
         default: return false;
     }
 }

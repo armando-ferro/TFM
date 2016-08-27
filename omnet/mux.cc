@@ -16,22 +16,34 @@
 #include <stdio.h>
 #include <string.h>
 #include <omnetpp.h>
-#include "Packet_m.h"
+#include "Mux_m.h"
 #include "Inter_layer_m.h"
 #include <cxmlelement.h>
+
+const short sending = 1;
+const short idle = 0;
 
 
 class mux : public cSimpleModule {
 private:
     /*variables*/
     int n;
+    int state_machine;
     cXMLElement * xml;
+    short * input_line ;    //transformación entre entrada y linea
+    bool b_config;
+    /*gestion entre el multiplexor y el demultiplexor*/
+    cQueue *txQueue;
+    cChannel * txChannel;
+    cMessage *sent;
 public:
     mux();
     virtual ~mux();
 protected:
     virtual void handleMessage(cMessage *msg);
     virtual void initialize();
+    virtual bool config(cXMLElement *xml);
+    virtual void send_out(int line,cMessage *msg);
 
 };
 
@@ -39,60 +51,132 @@ Define_Module(mux);
 
 
 mux::mux() {
-
-
+    b_config = true;
+    state_machine = idle;
+    txQueue = NULL;
+    txChannel = NULL;
+    sent = NULL;
 }
 
 mux::~mux() {
-
+    cancelAndDelete(sent);
+    txQueue->~cQueue();
 }
 
 void mux::initialize(){
     n = gateSize("in");
-    if(par("config").containsValue()){
-        xml = par("config").xmlValue();
+    input_line = new short[n];
+
+    /*inicializar a inexistente*/
+    for(int i=0;i<n;i++){
+        input_line[n]=-1;
     }
 
+    if(par("config").containsValue()){
+        xml = par("config").xmlValue();
+        b_config = config(xml);
+    }
 
+    /*Cola de mensajes a enviar*/
+    txQueue = new cQueue("txQueue");
+    /*mensaje que indica cuando se ha terminado de enviar un packete*/
+    sent = new cMessage("sent");
+    /*Canal de salida*/
+    if(gate("out")->isConnected()){
+        txChannel = gate("out")->getTransmissionChannel();
+    }else{
+        b_config = false;
+    }
+
+    WATCH(n);
+    WATCH(b_config);
 }
 
 void mux::handleMessage(cMessage *msg){
     /*Los paquetes que entran salen por out no es bidireccional*/
-    /*reconcoer por cual llega*/
-    if(msg->arrivedOn("in",0)){
-        /*TODO asignar linea*/
+    if(not(b_config)){
+        delete(msg);
+        bubble("Configuración errónea");
+        return;
     }
-    if(msg->arrivedOn("in",1)){
-        /*TODO asignar linea*/
+    if(msg == sent){
+        /*ya se ha mandado*/
+        if(txQueue->length()>0){
+            /*Hay paquetes que transmitir*/
+            Mux *qmx = (Mux *)txQueue->pop();
+            send(qmx,"out");
+            state_machine = sending;
+            /*programar el auto mensaje para cambair de estado*/
+            simtime_t txFinishTime = txChannel->getTransmissionFinishTime();
+            scheduleAt(txFinishTime,sent);
+        }else{
+            state_machine = idle;
+        }
+    }else{
+        int g_in,line;
+        /*reconcoer por cual llega*/
+        for(g_in=0;g_in<n;g_in++){
+            if(msg->arrivedOn("in",g_in)){
+                line = input_line[g_in];
+                if(line<0){
+                    /*no ha sido configurada*/
+                    bubble("Entrada no configurada");
+                    delete(msg);
+                    return;
+                }
+                /*ya se tiene la línea y la entrada*/
+                send_out(line,msg);
+            }
+        }
     }
-    if(msg->arrivedOn("in",2)){
-        /*TODO asignar linea*/
-    }
-    if(msg->arrivedOn("in",3)){
-        /*TODO asignar linea*/
-    }
-    if(msg->arrivedOn("in",4)){
-        /*TODO asignar linea*/
-    }
-    if(msg->arrivedOn("in",5)){
-        /*TODO asignar linea*/
-    }
-    if(msg->arrivedOn("in",6)){
-        /*TODO asignar linea*/
-    }
-    if(msg->arrivedOn("in",7)){
-        /*TODO asignar linea*/
-    }
-    if(msg->arrivedOn("in",8)){
-        /*TODO asignar linea*/
-    }
-    if(msg->arrivedOn("in",9)){
-        /*TODO asignar linea*/
-    }
+}
+
+
+bool mux::config(cXMLElement *xml){
+    cXMLElement *tmp;
+    short in,line;
+
+    tmp = xml->getFirstChild();
+    do{
+        in=atoi(tmp->getAttribute("gate"));
+        /*comprobar si la puerta existe y si la línea es corrrecta*/
+        if(in<0||in>= n){
+            EV << "Solo hay "<< n<< "entradas";
+            return false;
+        }
+        line = atoi(tmp->getAttribute("line"));
+        if(line < 0){
+            EV << "La línea debe ser un número positivo";
+            return false;
+        }
+        /*introduclir líena*/
+        input_line[in] = line;
+    }while((tmp=tmp->getNextSibling())!=NULL);
+
+    return true;
+
+}
+
+void mux::send_out(int line,cMessage *msg){
+    /*descampsular*/
+    inter_layer *il = check_and_cast<inter_layer *>(msg);
+    cPacket *pk = il->decapsulate();
     /*empaqueter y mandar*/
-    Packet *pk = check_and_cast<Packet *>(msg);
-    inter_layer *il = new inter_layer();
-    il->encapsulate(pk);
-    send(il,"out");
+    char msgname[20];
+    sprintf(msgname,"Mux-%d",line);
+    Mux *mx = new Mux(msgname,0);
+    mx->setLine(line);
+    mx->encapsulate(pk);
+    /*comprobar estado*/
+    if(state_machine == idle){
+        send(mx,"out");
+        state_machine = sending;
+        /*programar el auto mensaje para cambair de estado*/
+        simtime_t txFinishTime = txChannel->getTransmissionFinishTime();
+        scheduleAt(txFinishTime,sent);
+    }else{
+        txQueue->insert(mx);
+    }
+    delete(il);
 }
 

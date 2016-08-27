@@ -110,42 +110,42 @@ void Network::parsimUnpack(cCommBuffer *b)
     doUnpacking(b,this->protocol_var);
 }
 
-int Network::getSrcAddr() const
+unsigned short Network::getSrcAddr() const
 {
     return srcAddr_var;
 }
 
-void Network::setSrcAddr(int srcAddr)
+void Network::setSrcAddr(unsigned short srcAddr)
 {
     this->srcAddr_var = srcAddr;
 }
 
-int Network::getDstAddr() const
+unsigned short Network::getDstAddr() const
 {
     return dstAddr_var;
 }
 
-void Network::setDstAddr(int dstAddr)
+void Network::setDstAddr(unsigned short dstAddr)
 {
     this->dstAddr_var = dstAddr;
 }
 
-int Network::getHopCount() const
+unsigned int Network::getHopCount() const
 {
     return hopCount_var;
 }
 
-void Network::setHopCount(int hopCount)
+void Network::setHopCount(unsigned int hopCount)
 {
     this->hopCount_var = hopCount;
 }
 
-int Network::getHopLimit() const
+unsigned int Network::getHopLimit() const
 {
     return hopLimit_var;
 }
 
-void Network::setHopLimit(int hopLimit)
+void Network::setHopLimit(unsigned int hopLimit)
 {
     this->hopLimit_var = hopLimit;
 }
@@ -267,10 +267,10 @@ const char *NetworkDescriptor::getFieldTypeString(void *object, int field) const
         field -= basedesc->getFieldCount(object);
     }
     static const char *fieldTypeStrings[] = {
-        "int",
-        "int",
-        "int",
-        "int",
+        "unsigned short",
+        "unsigned short",
+        "unsigned int",
+        "unsigned int",
         "unsigned short",
     };
     return (field>=0 && field<5) ? fieldTypeStrings[field] : NULL;
@@ -313,10 +313,10 @@ std::string NetworkDescriptor::getFieldAsString(void *object, int field, int i) 
     }
     Network *pp = (Network *)object; (void)pp;
     switch (field) {
-        case 0: return long2string(pp->getSrcAddr());
-        case 1: return long2string(pp->getDstAddr());
-        case 2: return long2string(pp->getHopCount());
-        case 3: return long2string(pp->getHopLimit());
+        case 0: return ulong2string(pp->getSrcAddr());
+        case 1: return ulong2string(pp->getDstAddr());
+        case 2: return ulong2string(pp->getHopCount());
+        case 3: return ulong2string(pp->getHopLimit());
         case 4: return ulong2string(pp->getProtocol());
         default: return "";
     }
@@ -332,10 +332,10 @@ bool NetworkDescriptor::setFieldAsString(void *object, int field, int i, const c
     }
     Network *pp = (Network *)object; (void)pp;
     switch (field) {
-        case 0: pp->setSrcAddr(string2long(value)); return true;
-        case 1: pp->setDstAddr(string2long(value)); return true;
-        case 2: pp->setHopCount(string2long(value)); return true;
-        case 3: pp->setHopLimit(string2long(value)); return true;
+        case 0: pp->setSrcAddr(string2ulong(value)); return true;
+        case 1: pp->setDstAddr(string2ulong(value)); return true;
+        case 2: pp->setHopCount(string2ulong(value)); return true;
+        case 3: pp->setHopLimit(string2ulong(value)); return true;
         case 4: pp->setProtocol(string2ulong(value)); return true;
         default: return false;
     }

@@ -14,5 +14,5 @@
 
 packet Mux
 {
-    short line;
+    unsigned short line;
 }

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE lines SYSTEM "demux.dtd" >
+<lines>
+	<line line="0" gate="0"/>
+	<line line="1" gate="1"/>
+	<line line="2" gate="2"/>
+</lines>

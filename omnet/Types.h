@@ -32,11 +32,12 @@ const short a_nack_t = 2;
 const short p_application = 0;
 const short p_transport = 1;
 const short p_network = 2;
+const short p_link = 3;
 
 /*limites de direcciones*/
 const short min_net = 0;
 const short max_net = 99;
-const short min_trans = 100;
+const short min_trans = 00;
 const short max_trans = 999;
 
 

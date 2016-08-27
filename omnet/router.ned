@@ -15,7 +15,7 @@
 
 
 
-network Pruebas
+network Router
 {
     @display("bgb=621,372");
     types:

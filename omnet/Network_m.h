@@ -23,10 +23,10 @@
  * //
  * packet Network
  * {
- *     int srcAddr;
- *     int dstAddr;
- *     int hopCount;
- *     int hopLimit;
+ *     unsigned short srcAddr;
+ *     unsigned short dstAddr;
+ *     unsigned int hopCount;
+ *     unsigned int hopLimit;
  *     unsigned short protocol;
  * }
  * </pre>
@@ -34,10 +34,10 @@
 class Network : public ::cPacket
 {
   protected:
-    int srcAddr_var;
-    int dstAddr_var;
-    int hopCount_var;
-    int hopLimit_var;
+    unsigned short srcAddr_var;
+    unsigned short dstAddr_var;
+    unsigned int hopCount_var;
+    unsigned int hopLimit_var;
     unsigned short protocol_var;
 
   private:
@@ -57,14 +57,14 @@ class Network : public ::cPacket
     virtual void parsimUnpack(cCommBuffer *b);
 
     // field getter/setter methods
-    virtual int getSrcAddr() const;
-    virtual void setSrcAddr(int srcAddr);
-    virtual int getDstAddr() const;
-    virtual void setDstAddr(int dstAddr);
-    virtual int getHopCount() const;
-    virtual void setHopCount(int hopCount);
-    virtual int getHopLimit() const;
-    virtual void setHopLimit(int hopLimit);
+    virtual unsigned short getSrcAddr() const;
+    virtual void setSrcAddr(unsigned short srcAddr);
+    virtual unsigned short getDstAddr() const;
+    virtual void setDstAddr(unsigned short dstAddr);
+    virtual unsigned int getHopCount() const;
+    virtual void setHopCount(unsigned int hopCount);
+    virtual unsigned int getHopLimit() const;
+    virtual void setHopLimit(unsigned int hopLimit);
     virtual unsigned short getProtocol() const;
     virtual void setProtocol(unsigned short protocol);
 };
