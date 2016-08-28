@@ -244,6 +244,17 @@ simple mux
 
 }
 
+simple mux_priority
+{
+    parameters:
+        @display("i=block/join");
+        xml config = default(xmldoc("mux.xml"));
+    gates:
+        output out;
+        input in[] @loose;
+
+}
+
 simple demux
 {
     parameters:
@@ -279,6 +290,42 @@ module mux3_1
             @display("p=50,170");
         }
         mux: mux {
+            @display("p=120,120");
+        }
+    connections:
+        in1 --> m_in1.in;
+        in2 --> m_in2.in;
+        in3 --> m_in3.in;
+        m_in1.up_out --> mux.in++;
+        m_in2.up_out --> mux.in++;
+        m_in3.up_out --> mux.in++;
+        mux.out -->out;
+}
+
+module Pmux3_1
+{
+    parameters:
+        int Out_Queue_Length = default(-1);
+        @display("bgb=240,240");
+    gates:
+        output out;
+        input in1;
+        input in2;
+        input in3;
+    submodules:
+        m_in1: fisico {
+
+            @display("p=50,60");
+        }
+
+        m_in2: fisico {
+            @display("p=50,120");
+        }
+
+        m_in3: fisico {
+            @display("p=50,170");
+        }
+        mux: mux_priority {
             @display("p=120,120");
         }
     connections:

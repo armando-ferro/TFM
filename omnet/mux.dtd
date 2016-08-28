@@ -2,6 +2,7 @@
 <!ELEMENT inputs (input+)>
 <!ELEMENT input EMPTY>
 <!ATTLIST input
-	gate CDATA #REQUIRED
-	line CDATA #REQUIRED	
+	gate NMTOKEN #REQUIRED
+	line NMTOKEN #REQUIRED
+	priority NMTOKEN #IMPLIED
 >

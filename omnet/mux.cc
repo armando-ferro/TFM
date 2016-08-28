@@ -69,7 +69,7 @@ void mux::initialize(){
 
     /*inicializar a inexistente*/
     for(int i=0;i<n;i++){
-        input_line[n]=-1;
+        input_line[i]=-1;
     }
 
     if(par("config").containsValue()){
@@ -144,12 +144,19 @@ bool mux::config(cXMLElement *xml){
             EV << "Solo hay "<< n<< "entradas";
             return false;
         }
+
+        /*comprobar si ya ha sido asignada*/
+        if(input_line[in]>0){
+            EV << "La entrada "<<in<<" ya ha sido configurada:"<<input_line[in];
+            return false;
+        }
+
         line = atoi(tmp->getAttribute("line"));
         if(line < 0){
             EV << "La línea debe ser un número positivo";
             return false;
         }
-        /*introduclir líena*/
+        /*introduclir línea*/
         input_line[in] = line;
     }while((tmp=tmp->getNextSibling())!=NULL);
 

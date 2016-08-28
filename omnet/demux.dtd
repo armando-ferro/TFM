@@ -2,6 +2,6 @@
 <!ELEMENT lines (line+)>
 <!ELEMENT line EMPTY>
 <!ATTLIST line
-	gate CDATA #REQUIRED
-	line CDATA #REQUIRED	
+	gate NMTOKEN #REQUIRED
+	line NMTOKEN #REQUIRED	
 >

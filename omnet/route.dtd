@@ -2,11 +2,11 @@
 <!ELEMENT routes (route+)>
 <!ELEMENT route (gateway+)>
 <!ATTLIST route
-	start CDATA #REQUIRED
-	stop CDATA #REQUIRED	
+	start NMTOKEN #REQUIRED
+	stop NMTOKEN #REQUIRED	
 >
 <!ELEMENT gateway EMPTY>
 <!ATTLIST gateway
-	id CDATA #REQUIRED
-	prob CDATA "1"
+	id NMTOKEN #REQUIRED
+	prob NMTOKEN "1"
 >

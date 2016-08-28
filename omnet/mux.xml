@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE inputs SYSTEM "mux.dtd" >
 <inputs>
-	<input gate="0" line="0"/>
-	<input gate="1" line="1"/>
-	<input gate="2" line="2"/>
+	<input gate="0" line="0" priority="0"/>
+	<input gate="1" line="1" priority="10"/>
+	<input gate="2" line="2" priority="10"/>
 </inputs>

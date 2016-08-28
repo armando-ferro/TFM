@@ -17,7 +17,7 @@
 
 network Pruebas
 {
-    @display("bgb=621,372");
+    @display("bgb=810,360");
     types:
         channel C extends ned.DatarateChannel
         {
@@ -27,48 +27,65 @@ network Pruebas
         }
     submodules:
 
-        host0: InOut2GBN {
-            @display("p=172,77");
-            Addr = 00;
-            Dst_Addr = 103;
-            n_Pkt = 10;
-            delayTime = 30s;
-            pktSize = 20bit;
+        demux: demux1_3 {
+            @display("p=484,157");
         }
-        host1: InOut2GBN {
-            @display("p=511,77");
-            Addr = 01;
-            Dst_Addr = 102;
-            n_Pkt = 10;
-            delayTime = 30s;
-            pktSize = 20bit;
+        mux: Pmux3_1 {
+            @display("p=317,157");
         }
-        host2: InOut2GBN {
-            @display("p=172,247");
-            Addr = 02;
-            Dst_Addr = 101;
-            n_Pkt = 10;
-            delayTime = 30s;
-            pktSize = 20bit;
+        injector: injector {
+            @display("p=94,50");
         }
-        host3: InOut2GBN {
-            @display("p=511,247");
-            Addr = 03;
-            Dst_Addr = 100;
-            n_Pkt = 10;
-            delayTime = 30s;
-            pktSize = 20bit;
+        injector1: injector {
+            @display("p=94,151");
+        }
+        fisico: fisico {
+            @display("p=198,50");
+        }
+        fisico1: fisico {
+            @display("p=198,151");
+        }
+        dump: dump {
+            @display("p=723,62");
+        }
+        dump1: dump {
+            @display("p=723,157");
+        }
+        fisico2: fisico {
+            @display("p=611,62");
+        }
+        fisico3: fisico {
+            @display("p=611,157");
+        }
+        injector2: injector {
+            @display("p=94,272");
+        }
+        fisico4: fisico {
+            @display("p=198,272");
+        }
+        dump2: dump {
+            @display("p=723,272");
+        }
+        fisico5: fisico {
+            @display("p=611,272");
         }
     connections:
-        host0.out1 --> C --> host1.in1;
-        host1.out1 --> C --> host0.in1;
+        injector.down_out --> fisico.up_in;
+        injector1.down_out --> fisico1.up_in;
+        fisico2.up_out --> dump.down_in;
+        fisico3.up_out --> dump1.down_in;
 
-        host1.out2 --> C --> host3.in2;
-        host3.out2 --> C --> host1.in2;
+        fisico.out --> C --> mux.in1;
+        fisico1.out --> C --> mux.in2;
 
-        host3.out1 --> C --> host2.in1;
-        host2.out1 --> C --> host3.in1;
+        demux.out1 --> C --> fisico2.in;
+        demux.out2 --> C --> fisico3.in;
 
-        host0.out2 --> C --> host2.in2;
-        host2.out2 --> C --> host0.in2;
+        mux.out --> C --> demux.in;
+
+
+        injector2.down_out --> fisico4.up_in;
+        fisico5.up_out --> dump2.down_in;
+        fisico4.out --> C --> mux.in3;
+        demux.out3 --> C --> fisico5.in;
 }

@@ -28,7 +28,7 @@ network Mux
     submodules:
 
         demux: demux1_3 {
-            @display("p=481,151");
+            @display("p=484,157");
         }
         mux: mux3_1 {
             @display("p=317,157");
