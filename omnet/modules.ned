@@ -46,6 +46,30 @@ simple fisico
         input up_in @loose;
 }
 
+simple simple_fisico
+{
+    parameters:
+        @display("i=block/ifcard");
+
+        @signal[rcvBit](type="int");
+        @statistic[rcv_Bit](title="rcvBit"; source="rcvBit"; record=vector);
+
+        @signal[rcvPkt](type="int");
+        @statistic[rcv_Pkt](title="rcvPkt"; source="rcvPkt"; record=vector);
+
+        @signal[sndBit](type="int");
+        @statistic[snd_Bit](title="sndBit"; source="sndBit"; record=vector);
+
+        @signal[sndPkt](type="int");
+        @statistic[snd_Pkt](title="sndPkt"; source="sndPkt"; record=vector);
+    gates:
+        output out @loose;
+        input in @loose;
+        output up_out @loose;
+        input up_in @loose;
+}
+
+
 simple free_sw
 {
     parameters:
@@ -122,7 +146,7 @@ simple injector
         int Dst_Addr = default(0);
         int n_Pkt = default(-1);
         volatile double delayTime @unit(s) = default(30s);   // delay before sending back message
-        volatile double pktSize @unit(bit) = default(70bit);
+        volatile double pktSize @unit(bit) = default(30bit);
 
 
         @signal[pktTam](type=int);
