@@ -49,6 +49,7 @@ private:
     simsignal_t s_rcvBit;
     simsignal_t s_lostPkt;
     simsignal_t s_errorPkt;
+    simsignal_t s_queueTam;
 public:
     fisico();
     virtual ~fisico();
@@ -87,6 +88,7 @@ fisico::fisico() {
     s_rcvPkt = 0;
     s_lostPkt = 0;
     s_errorPkt = 0;
+    s_queueTam = 0;
 
     b_config = true;
 
@@ -116,6 +118,7 @@ void fisico::initialize(){
     s_rcvPkt = registerSignal("rcvPkt");
     s_lostPkt = registerSignal("lostPkt");
     s_errorPkt = registerSignal("errorPkt");
+    s_queueTam = registerSignal("QueueState");
 
     /*Cola de mensajes a enviar*/
     txQueue = new cQueue("txQueue");
@@ -143,6 +146,7 @@ void fisico::handleMessage(cMessage *msg){
         }else{
             /*se debe extraer un mensaje de la cola y enviar*/
             cPacket *message = (cPacket *)txQueue->pop();
+            emit(s_queueTam,txQueue->length());
             send_out(message);
         }
     }
@@ -181,10 +185,12 @@ void fisico::handleMessage(cMessage *msg){
                     }else{
                         /*todavía hay sitio*/
                         txQueue->insert(pk);
+                        emit(s_queueTam,txQueue->length());
                     }
                 }else{
                     /*no hay limite*/
                     txQueue->insert(pk);
+                    emit(s_queueTam,txQueue->length());
                 }
 
             }

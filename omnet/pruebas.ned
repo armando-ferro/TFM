@@ -14,7 +14,6 @@
 //
 
 
-
 network Pruebas
 {
     @display("bgb=810,360");
@@ -22,7 +21,7 @@ network Pruebas
         channel C extends ned.DatarateChannel
         {
             datarate = 1bps;
-            per = 0;
+            per = 0.1;
             delay = 1s;
         }
     submodules:
@@ -30,17 +29,19 @@ network Pruebas
         injector: injector {
             @display("p=145,113");
         }
-        simple_fisico: simple_fisico {
-            @display("p=145,207");
-        }
         dump: dump {
             @display("p=352,113");
         }
-        simple_fisico1: simple_fisico {
-            @display("p=352,207");
+        senderSW: senderGBN {
+            @display("p=145,220");
+            Queue_Length = 5;
+        }
+        receiverACK: receiverACK {
+            @display("p=352,220");
         }
     connections:
-        injector.down_out --> simple_fisico.up_in;
-        simple_fisico1.up_out --> dump.down_in;
-        simple_fisico.out --> C --> simple_fisico1.in;
+        injector.down_out --> senderSW.up_in;
+        senderSW.out --> C --> receiverACK.in;
+        receiverACK.up_out --> dump.down_in;
+        receiverACK.out --> C --> senderSW.in;
 }

@@ -31,12 +31,17 @@ class senderGBN : public cSimpleModule{
 private:
     int sent_seq,ack_seq,rpt_seq;
     int rpt_total;  //total packege to repeat after nack
-    int rcvAck,rcvNack;
+    int rcvAck,rcvNack,sndBit,sndPkt,lostPkt;
+    unsigned int header_tam;
+    int max_state;
     /*Señales*/
     simsignal_t s_queueState;
     simsignal_t s_rcvAck;
     simsignal_t s_rcvNack;
     simsignal_t s_windowTam;
+    simsignal_t s_sndBit;
+    simsignal_t s_sndPkt;
+    simsignal_t s_lostPkt;
     /*Mensaje para enviarse a si mismo al terminar de enviar un paquete*/
     cMessage *sent;
     /*Canal*/
@@ -66,18 +71,25 @@ senderGBN::senderGBN() {
     sent_seq= 0;
     rpt_seq = 0;
     rpt_total = 0;
+    lostPkt = 0;
     sent = NULL;
     txChannel = NULL;
     txQueue = NULL;
     ackQueue = NULL;
     state_machine = idle;
 
+    max_state = -1;
+    header_tam = 0;
+
+    sndBit = 0;
+    sndPkt = 0;
     rcvAck = 0;
     rcvNack = 0;
     s_rcvAck = 0;
     s_rcvNack = 0;
     s_queueState = 0;
     s_windowTam = 0;
+    s_lostPkt = 0;
 }
 
 senderGBN::~senderGBN() {
@@ -93,8 +105,17 @@ void senderGBN::initialize(){
     s_rcvAck = registerSignal("rcvACK");
     s_rcvNack = registerSignal("rcvNACK");
     s_windowTam = registerSignal("WindowTam");
+    s_lostPkt = registerSignal("lostPkt");
+    s_sndBit = registerSignal("sndBit");
+    s_sndPkt = registerSignal("sndPkt");
 
-    /*TODO parámetros*/
+    if(par("Queue_Length").containsValue()){
+        max_state = par("Queue_Length");
+    }
+
+    if(par("Header_Tam").containsValue()){
+        header_tam = par("Header_Tam");
+    }
 
     /*Inicializar variables*/
     txChannel = gate("out")->getTransmissionChannel();
@@ -111,7 +132,6 @@ void senderGBN::initialize(){
 }
 
 void senderGBN::handleMessage(cMessage *msg){
-    EV << "MENSAJE: ";
     if(msg == sent){
         EV << " Propio. ";
         /*el mensaje ya ha sido enviado*/
@@ -125,7 +145,9 @@ void senderGBN::handleMessage(cMessage *msg){
                 state_machine = idle;
             }else{
                 /*hay mensajes que enviar*/
+                /*no hay limite*/
                 cPacket *pk = (cPacket *)txQueue->pop();
+                emit(s_queueState,txQueue->length());
                 Link * lk = getPacket(pk);
                 sendCopyOf(lk);
                 state_machine = sending_i;
@@ -143,6 +165,7 @@ void senderGBN::handleMessage(cMessage *msg){
                 }else{
                     /*hay mensajes que enviar*/
                     cPacket *pk = (cPacket *)txQueue->pop();
+                    emit(s_queueState,txQueue->length());
                     Link * lk = getPacket(pk);
                     sendCopyOf(lk);
                     state_machine = sending_i;
@@ -165,8 +188,6 @@ void senderGBN::handleMessage(cMessage *msg){
             /*desencapsular*/
             inter_layer *il = check_and_cast<inter_layer *>(msg);
             cPacket *up = (cPacket *)il->decapsulate();
-            emit(s_queueState,txQueue->length());
-            emit(s_windowTam,(sent_seq-ack_seq));
             EV << " Message nuevo. ";
             /*llega un paquete nuevo*/
             if(state_machine == idle){
@@ -175,8 +196,24 @@ void senderGBN::handleMessage(cMessage *msg){
                 sendCopyOf(lk);
                 state_machine = sending_i;
             }else{
-                /*se almacena el mensaje en la cola*/
-                txQueue->insert(up);
+                /*comprobar cola*/
+                if(max_state<0){
+                    /*no hay límite*/
+                    txQueue->insert(up);
+                    emit(s_queueState,txQueue->length());
+                }else{
+                    /*comprobar límtie*/
+                    if(txQueue->length()<max_state){
+                        /*entra*/
+                        txQueue->insert(up);
+                        emit(s_queueState,txQueue->length());
+                    }else{
+                        /*no hay sitio*/
+                        delete(up);
+                        emit(s_lostPkt,++lostPkt);
+                    }
+                }
+
             }
             delete(il);
         }else{
@@ -200,6 +237,7 @@ void senderGBN::handleMessage(cMessage *msg){
                         delete(pkt);
                     }
                     ack_seq = rcv_seq-1;
+                    emit(s_windowTam,(sent_seq-ack_seq));
                     startRetrasmision();
                     emit(s_rcvNack,++rcvNack);
                 }
@@ -217,6 +255,7 @@ void senderGBN::handleMessage(cMessage *msg){
                         delete(pkt);
                     }
                     ack_seq = rcv_seq;
+                    emit(s_windowTam,(sent_seq-ack_seq));
                     /*Comprobar si se esta retrasmitiendo*/
                     if(state_machine == sending_r){
                         /*actualizar variables de retrasmisión*/
@@ -256,7 +295,12 @@ Link *senderGBN::getPacket(cPacket *msg){
     lk->setType(e_msg_t);
     lk->setSeq(sent_seq);
     lk->encapsulate(msg);
+    int tam = msg->getBitLength();
+    sndBit += tam;
+    emit(s_sndBit,sndBit);
+    emit(s_sndPkt,++sndPkt);
     ackQueue->insert(lk);
+    emit(s_windowTam,(sent_seq-ack_seq));
     return lk;
 }
 

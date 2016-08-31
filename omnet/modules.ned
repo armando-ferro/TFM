@@ -36,6 +36,9 @@ simple fisico
 
         @signal[errorPkt](type="int");
         @statistic[error_Pkt](title="errorPkt"; source="errorPkt"; record=vector);
+        
+        @signal[QueueState](type="int");
+        @statistic[Queue_State](title="QueueState"; source="QueueState"; record=vector);
 
         int Queue_Length = default(-1);
         int Header_Tam = default(0);
@@ -146,7 +149,7 @@ simple injector
         int Dst_Addr = default(0);
         int n_Pkt = default(-1);
         volatile double delayTime @unit(s) = default(30s);   // delay before sending back message
-        volatile double pktSize @unit(bit) = default(30bit);
+        volatile double pktSize @unit(bit) = default(40bit);
 
 
         @signal[pktTam](type=int);
@@ -180,6 +183,9 @@ simple dump
 simple senderSW
 {
     parameters:
+        
+        int Header_Tam = default(0);
+        int Queue_Length = default(-1);
 
         @signal[rcvACK](type="int");
         @statistic[rcv_ACK](title="rcvACK"; source="rcvACK"; record=vector);
@@ -189,6 +195,15 @@ simple senderSW
 
         @signal[QueueState](type="int");
         @statistic[Queue_State](title="QueueState"; source="QueueState"; record=vector);
+        
+        @signal[sndBit](type="int");
+        @statistic[snd_Bit](title="sndBit"; source="sndBit"; record=vector);
+
+        @signal[sndPkt](type="int");
+        @statistic[snd_Pkt](title="sndPkt"; source="sndPkt"; record=vector);
+
+        @signal[lostPkt](type="int");
+        @statistic[lost_Pkt](title="lostPkt"; source="lostPkt"; record=vector);
 
         @display("i=block/queue");
 
@@ -202,6 +217,10 @@ simple senderGBN
 {
     parameters:
 
+		int Header_Tam = default(0);
+        int Queue_Length = default(-1);
+        int Window_Length = default(-1);
+
         @signal[rcvACK](type="int");
         @statistic[rcv_ACK](title="rcvACK"; source="rcvACK"; record=vector);
 
@@ -213,6 +232,15 @@ simple senderGBN
 
         @signal[WindowTam](type="int");
         @statistic[Window_Tam](title="WindowTam"; source="WindowTam"; record=vector);
+        
+        @signal[sndBit](type="int");
+        @statistic[snd_Bit](title="sndBit"; source="sndBit"; record=vector);
+
+        @signal[sndPkt](type="int");
+        @statistic[snd_Pkt](title="sndPkt"; source="sndPkt"; record=vector);
+
+        @signal[lostPkt](type="int");
+        @statistic[lost_Pkt](title="lostPkt"; source="lostPkt"; record=vector);
 
         @display("i=block/queue");
 
@@ -230,6 +258,12 @@ simple receiverACK
 
         @signal[sndNACK](type="int");
         @statistic[snd_NACK](title="sndNACK"; source="sndNACK"; record=vector);
+        
+        @signal[rcvBit](type="int");
+        @statistic[rcv_Bit](title="rcvBit"; source="rcvBit"; record=vector);
+
+        @signal[rcvPkt](type="int");
+        @statistic[rcv_Pkt](title="rcvPkt"; source="rcvPkt"; record=vector);
 
         int Ack_Tam = default(1);
 

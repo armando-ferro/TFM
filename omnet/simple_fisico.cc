@@ -172,8 +172,12 @@ void simple_fisico::send_out(cPacket * pk){
 void simple_fisico::send_up(cPacket *pk){
     /*encapsular con la información*/
     inter_layer *il = new inter_layer("simple_fisicoUP",0);
+    int tam;
+    tam = pk->getBitLength();
+    rcvBit+=tam;
     il->encapsulate(pk);
-
     send(il,"up_out");
+    emit(s_rcvBit,rcvBit);
+    emit(s_sndPkt,++rcvPkt);
 
 }

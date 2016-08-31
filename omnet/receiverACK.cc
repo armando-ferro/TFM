@@ -26,8 +26,9 @@ private:
     int seq;
     simsignal_t s_sndAck;
     simsignal_t s_sndNack;
-    int sndAck;
-    int sndNack;
+    simsignal_t s_rcvBit;
+    simsignal_t s_rcvPkt;
+    int sndAck,sndNack,rcvBit,rcvPkt;
     int ack_tam;
 public:
     receiverACK();
@@ -45,8 +46,12 @@ receiverACK::receiverACK() {
     seq = 0;
     sndAck = 0;
     sndNack = 0;
+    rcvBit = 0;
+    rcvPkt = 0;
     s_sndAck = 0;
     s_sndNack = 0;
+    s_rcvBit = 0;
+    s_rcvPkt = 0;
     ack_tam = 1;
 
 }
@@ -58,6 +63,8 @@ receiverACK::receiverACK() {
 void receiverACK::initialize(){
     s_sndAck = registerSignal("sndACK");
     s_sndNack = registerSignal("sndNACK");
+    s_rcvBit = registerSignal("rcvBit");
+    s_rcvPkt = registerSignal("rcvPkt");
 
     if(par("Ack_Tam").containsValue()){
         ack_tam = par("Ack_Tam");
@@ -93,6 +100,10 @@ void receiverACK::handleMessage(cMessage *msg){
             /*enviar el paquete a la capa supeior*/
             if(pk->hasEncapsulatedPacket()){
                 cPacket * up = (cPacket *)pk->decapsulate();
+                int tam = up->getBitLength();
+                rcvBit += tam;
+                emit(s_rcvBit,rcvBit);
+                emit(s_rcvPkt,++rcvPkt);
                 send_up(up);
             }
         }else if(r_seq<(seq+1)){
