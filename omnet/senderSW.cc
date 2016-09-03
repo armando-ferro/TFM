@@ -29,6 +29,7 @@ class senderSW : public cSimpleModule{
 private:
     Link *message;  // message that has to be re-sent on error
     cMessage *sent;
+    bool b_config;
     int rpt,sndBit,sndPkt,lostPkt;
     unsigned int header_tam;
     int max_state;
@@ -83,6 +84,7 @@ senderSW::senderSW() {
     s_sndBit = 0;
     s_sndPkt = 0;
     state_machine = idle;
+    b_config = true;
 }
 
 senderSW::~senderSW() {
@@ -102,7 +104,11 @@ void senderSW::initialize(){
     s_sndPkt = registerSignal("sndPkt");
 
 
-    txChannel = gate("out")->getTransmissionChannel();
+    if(gate("out")->isConnected()){
+        txChannel = gate("out")->getTransmissionChannel();
+    }else{
+        b_config = false;
+    }
 
     sent = new cMessage("sent");
     txQueue = new cQueue("txQueue");
@@ -124,15 +130,18 @@ void senderSW::initialize(){
 }
 
 void senderSW::handleMessage(cMessage *msg){
-    EV << "llega mensaje";
+    if(not(b_config)){
+        /*configuración errónea*/
+        bubble("Canal no conectado");
+        delete(msg);
+        return;
+    }
     if(msg == sent){
-        EV << " sent";
         /*el mensaje ya ha sido enviado*/
         state_machine=w_ack;
     }
     else{
         if(msg->arrivedOn("up_in")){
-            EV << " nuevo";
             /*llega un paquete nuevo*/
             /*extrare el original*/
             inter_layer *il = check_and_cast<inter_layer *>(msg);
@@ -170,11 +179,16 @@ void senderSW::handleMessage(cMessage *msg){
             }
             delete(il);
         }else{
+            /*capa inferior*/
+            /*comprobar estado*/
+            if(state_machine != w_ack){
+                delete(msg);
+                return;
+            }
             /*Comprobar si es un ACK o un NACK*/
             Link *pk = check_and_cast<Link *>(msg);
             if (pk->getType()==e_nack_t)
             {
-                EV << " NACK";
                 /*NACK*/
                 /*Se añade una repetición*/
                 if(pk->getSeq() == sent_seq){
@@ -186,7 +200,7 @@ void senderSW::handleMessage(cMessage *msg){
             }
             else if(pk->getType()==e_ack_t)
             {
-                EV << " ACK";
+
                 /*ACK*/
                 unsigned int r_seq = pk->getSeq();
                 if(r_seq == sent_seq){

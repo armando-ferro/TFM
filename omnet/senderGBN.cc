@@ -29,6 +29,7 @@ const short sending_r = 2;
 
 class senderGBN : public cSimpleModule{
 private:
+    bool b_config;
     int sent_seq,ack_seq,rpt_seq;
     int rpt_total;  //total packege to repeat after nack
     int rcvAck,rcvNack,sndBit,sndPkt,lostPkt;
@@ -90,6 +91,7 @@ senderGBN::senderGBN() {
     s_queueState = 0;
     s_windowTam = 0;
     s_lostPkt = 0;
+    b_config=true;
 }
 
 senderGBN::~senderGBN() {
@@ -118,7 +120,11 @@ void senderGBN::initialize(){
     }
 
     /*Inicializar variables*/
-    txChannel = gate("out")->getTransmissionChannel();
+    if(gate("out")->isConnected()){
+        txChannel = gate("out")->getTransmissionChannel();
+    }else{
+        b_config = false;
+    }
     sent = new cMessage("sent");
     txQueue = new cQueue("txQueue");
     ackQueue = new cQueue("ackQueue");
@@ -132,13 +138,17 @@ void senderGBN::initialize(){
 }
 
 void senderGBN::handleMessage(cMessage *msg){
+    if(not(b_config)){
+        /*configuración errónea*/
+        bubble("Canal no conectado");
+        delete(msg);
+        return;
+    }
     if(msg == sent){
-        EV << " Propio. ";
         /*el mensaje ya ha sido enviado*/
         /*Comprobar en que estado de envio estamos*/
         switch(state_machine){
         case sending_i:
-            EV << " En sending_i";
             /*Comprobar la cola*/
             if(txQueue->isEmpty()){
                 /*vuelve a estado idle*/
@@ -154,7 +164,6 @@ void senderGBN::handleMessage(cMessage *msg){
             }
             break;
         case sending_r:
-            EV << " En sending_r";
             /*comprobar si hay que envia otro o no*/
             if(rpt_seq == rpt_total){
                 /*se ha enviado toda la repetición*/
@@ -178,6 +187,10 @@ void senderGBN::handleMessage(cMessage *msg){
                 state_machine = sending_r;
             }
             break;
+        default:
+            delete(msg);
+            return;
+            break;
         }
     }
     else{
@@ -188,7 +201,6 @@ void senderGBN::handleMessage(cMessage *msg){
             /*desencapsular*/
             inter_layer *il = check_and_cast<inter_layer *>(msg);
             cPacket *up = (cPacket *)il->decapsulate();
-            EV << " Message nuevo. ";
             /*llega un paquete nuevo*/
             if(state_machine == idle){
                 /*si se esta esperando se envia el mensaje*/
@@ -222,7 +234,6 @@ void senderGBN::handleMessage(cMessage *msg){
             int rcv_seq = pk->getSeq();
             if (pk->getType()==e_nack_t)
             {
-                EV << " NACK. ";
                 /*NACK*/
                 /*Comprobar la secuencia*/
                 if(rcv_seq == (ack_seq+1)){
@@ -245,7 +256,6 @@ void senderGBN::handleMessage(cMessage *msg){
             }
             else if(pk->getType()==e_ack_t)
             {
-                EV << " ACK. ";
                 /*ACK*/
                 /*comprobar si es ack acumlado*/
                 int ack_acum = rcv_seq - ack_seq;
@@ -286,8 +296,6 @@ void senderGBN::startRetrasmision(){
 }
 
 Link *senderGBN::getPacket(cPacket *msg){
-    EV << " generando secuencia";
-
     /*Generar nuevo paquete, encapsular y guardar*/
     char msgname[20];
     sprintf(msgname,"LinkGBN-%d",++sent_seq);
@@ -306,7 +314,6 @@ Link *senderGBN::getPacket(cPacket *msg){
 
 void senderGBN::sendCopyOf(Link *msg)
 {
-    EV << " Enviando mensaje";
     /*Duplicar el mensaje y mandar una copia*/
     Link *copy = (Link *) msg->dup();
     send(copy, "out");

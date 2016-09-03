@@ -49,9 +49,15 @@ private:
     int origen;
     int hopLimit;
     int headerTam;
+    int errorPkt,rcvBit,rcvPkt,forwardedBit,forwardedPkt;
     route *routes;
     int n_routes;
     cXMLElement * xml;
+    simsignal_t s_errorPkt;
+    simsignal_t s_rcvBit;
+    simsignal_t s_rcvPkt;
+    simsignal_t s_forwardedBit;
+    simsignal_t s_forwardedPkt;
 public:
     router();
     virtual ~router();
@@ -73,12 +79,25 @@ router::router() {
     up_inc = 0;
     up_outc = 0;
 
+    errorPkt = 0;
+    rcvBit = 0;
+    rcvPkt = 0;
+    forwardedBit = 0;
+    forwardedPkt = 0;
+
+    s_errorPkt = 0;
+    s_rcvBit = 0;
+    s_rcvPkt = 0;
+    s_forwardedBit = 0;
+    s_forwardedPkt = 0;
+
     headerTam = 0;
     origen = 0;
     hopLimit = 10;
 
     routes = NULL;
     n_routes = 0;
+    b_config = true;
 }
 
 router::~router() {
@@ -136,10 +155,15 @@ void router::initialize(){
         xml = par("Config_File").xmlValue();
         if((n_routes=config(xml))<0){
             b_config = false;
-            //endSimulation();
         }
 
     }
+
+    s_rcvBit = registerSignal("rcvBit");
+    s_rcvPkt = registerSignal("rcvPkt");
+    s_errorPkt = registerSignal("errorPkt");
+    s_forwardedBit = registerSignal("forwardedBit");
+    s_forwardedPkt = registerSignal("forwardedPkt");
 
     WATCH(down_inc);
     WATCH(down_outc);
@@ -147,17 +171,16 @@ void router::initialize(){
     WATCH(up_outc);
     WATCH(n_routes);
     WATCH(b_config);
+    WATCH(s_rcvPkt);
 }
 
 void router::handleMessage(cMessage *msg){
     if(not(b_config)){
         return;
     }
-    EV << "New-Packet";
     inter_layer *il = check_and_cast<inter_layer *>(msg);
     if(msg->arrivedOn("up_in")){
         /*llega de la capa superior*/
-        EV<< " Superior";
         /*obtener datos y paquetes*/
         int dest = il->getDestino();
         int protocol = il->getProtocol();
@@ -189,8 +212,7 @@ void router::handleMessage(cMessage *msg){
             delete(il);
             return;
         }
-
-        cPacket * pk = il->decapsulate();
+        cPacket *pk = il->decapsulate();
         /*crear cabecera*/
         char msgname[20];
         sprintf(msgname,"Network-%d-%d",origen,dest);
@@ -215,13 +237,17 @@ void router::handleMessage(cMessage *msg){
 
     }else{
         /*llega de la capa inferior*/
-        EV << " Inferior";
         /*Desencapsular*/
         Network *nw = (Network *)il->decapsulate();
+        if(nw->hasBitError()){
+            bubble("Paquete con error");
+            /*no se pueden comprobar la dirección*/
+            delete(nw);
+            return;
+        }
         int dest = nw->getDstAddr();
         if(dest==origen){
             /*soy el destinatario*/
-            EV << " Destinatario";
             send_up(nw);
         }else{
             /*necesario rutar*/
@@ -269,10 +295,16 @@ int router::config(cXMLElement *xml){
 
     /*comprobar número de rutas*/
     tmp = xml->getFirstChild();
+    if(not(tmp->hasChildren())){
+        EV << "Una ruta no tiene puertas";
+        return -1;
+    }
+
     while((tmp=tmp->getNextSibling())!=NULL){
         n++;
         if(not(tmp->hasChildren())){
             /*una ruta no tiene puertas*/
+            EV << "Una ruta no tiene puertas";
             return -1;
         }
     }
@@ -281,12 +313,10 @@ int router::config(cXMLElement *xml){
 
     tmp = xml->getFirstChild();
 
-
-
     for(i=0;i<n;i++,tmp = tmp->getNextSibling()){
 
         gate_tmp = tmp->getFirstChild();
-
+        ng = 1;
        /*comprobar número de puertas*/
        while((gate_tmp=gate_tmp->getNextSibling())!=NULL){
            ng++;
@@ -346,30 +376,30 @@ int router::config(cXMLElement *xml){
 void router::send_route(int dest,inter_layer *il){
     /*comprobar con que ruta encaja*/
     EV << " Rutando:"<<dest;
+    /*se extrae el tamaño porque el il no tiene cabecera*/
+    int tam = il->getBitLength();
+    forwardedBit += tam;
+    emit(s_forwardedBit,forwardedBit);
+    emit(s_forwardedPkt,++forwardedPkt);
     double irand,crand;
     for(int i=0;i<n_routes;i++){
         if(dest>=routes[i].start&&dest<=routes[i].stop){
-            EV << " Ruta:"<<i;
             /*esta ruta cumple*/
             /*comprobar salidas*/
             if(routes[i].n_gates == 1){
                 /*solo una, por ella*/
-                EV << " Mandando:"<<routes[i].gates[0].gate;
                 send(il,"down_out",routes[i].gates[0].gate);
                 return;
             }else{
                 /*cargar probabilidades*/
                 irand = uniform(0, 1);
-                EV << " Probabilidades:"<<irand;
                 crand = 0;
                 for(int j=0;j<routes[i].n_gates;j++){
                     if(irand<(crand+=routes[i].gates[j].prob)){
                         /*cumple*/
-                        EV << " Mandando:"<<routes[i].gates[0].gate;
                         send(il,"down_out",routes[i].gates[j].gate);
                         return;
                     }
-                    EV << " Comp:"<<crand;
                 }
             }
         }
@@ -395,6 +425,10 @@ void router::send_up(Network *nw){
                     send(il,"up_out",i);
                 }
             }
+            int tam = app->getBitLength();
+            rcvBit+=tam;
+            emit(s_rcvBit,rcvBit);
+            emit(s_rcvPkt,++rcvPkt);
             break;
         }
         case p_transport:{
@@ -414,6 +448,10 @@ void router::send_up(Network *nw){
                 il->encapsulate(tp);
                 send(il,"up_out",gate);
             }
+            int tam = tp->getBitLength();
+            rcvBit+=tam;
+            emit(s_rcvBit,rcvBit);
+            emit(s_rcvPkt,++rcvPkt);
             break;
         }
         default:

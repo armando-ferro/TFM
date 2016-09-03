@@ -35,10 +35,10 @@ network GoBackN
             Ack_Tam = 1;
             Addr = 101;
         }
-        fisico: fisico {
+        fisico: simple_fisico {
             @display("p=45,190");
         }
-        fisico1: fisico {
+        fisico1: simple_fisico {
             @display("p=539,190");
         }
         gbn1: free_gbn {

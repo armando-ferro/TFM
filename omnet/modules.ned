@@ -90,14 +90,8 @@ simple free_sw
         @signal[sndACK](type="int");
         @statistic[snd_ACK](title="sndACK"; source="sndACK"; record=vector);
 
-        @signal[rcvNACK](type="int");
-        @statistic[rcv_NACK](title="rcvNACK"; source="rcvNACK"; record=vector);
-
-        @signal[sndNACK](type="int");
-        @statistic[snd_NACK](title="sndNACK"; source="sndNACK"; record=vector);
-
         @signal[queueTam](type="int");
-        @signal[queue_Tam](title="queueTam"; source="queueTam"; record=vector);
+        @statistic[queue_Tam](title="queueTam"; source="queueTam"; record=vector);
 
     gates:
         output down_out;
@@ -124,17 +118,11 @@ simple free_gbn
         @signal[sndACK](type="int");
         @statistic[snd_ACK](title="sndACK"; source="sndACK"; record=vector);
 
-        @signal[rcvNACK](type="int");
-        @statistic[rcv_NACK](title="rcvNACK"; source="rcvNACK"; record=vector);
-
-        @signal[sndNACK](type="int");
-        @statistic[snd_NACK](title="sndNACK"; source="sndNACK"; record=vector);
-
         @signal[queueTam](type="int");
-        @signal[queue_Tam](title="queueTam"; source="queueTam"; record=vector);
+        @statistic[queue_Tam](title="queueTam"; source="queueTam"; record=vector);
 
         @signal[sndWindow](type="int");
-        @signal[snd_Window](title="sndWindow"; source="sndWindow"; record=vector);
+        @statistic[snd_Window](title="sndWindow"; source="sndWindow"; record=vector);
 
     gates:
         output down_out;
@@ -283,6 +271,22 @@ simple router
         int Hop_Limit = default(10);
         int Header_Tam = default(0);
         xml Config_File = default(xmldoc("pr.xml"));
+        
+        @signal[errorPkt](type="int");
+        @statistic[error_Pkt](title="errorPkt"; source="errorPkt"; record=vector);
+        
+        @signal[rcvBit](type="int");
+        @statistic[rcv_Bit](title="rcvBit"; source="rcvBit"; record=vector);
+        
+      	@signal[rcvPkt](type="int");
+        @statistic[rcv_Pkt](title="rcvPkt"; source="rcvPkt"; record=vector);
+        
+        @signal[forwardedBit](type="int");
+        @statistic[forwarded_Bit](title="forwardedBit"; source="forwardedBit"; record=vector);
+        
+        @signal[forwardedPkt](type="int");
+        @statistic[forwarded_Pkt](title="forwardedPkt"; source="forwardedPkt"; record=vector);
+        
     gates:
         output up_out[10] @loose;
         input up_in[10] @loose;

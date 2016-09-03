@@ -30,6 +30,7 @@ private:
     simsignal_t s_rcvPkt;
     int sndAck,sndNack,rcvBit,rcvPkt;
     int ack_tam;
+    bool b_config;
 public:
     receiverACK();
 protected:
@@ -69,22 +70,31 @@ void receiverACK::initialize(){
     if(par("Ack_Tam").containsValue()){
         ack_tam = par("Ack_Tam");
     }
+
+    if(not(gate("out")->isConnected())){
+        b_config = false;
+    }
+
+    if(not(gate("up_out")->isConnected())){
+        b_config = false;
+    }
 }
 
 void receiverACK::handleMessage(cMessage *msg){
+    if(not(b_config)){
+        bubble("Enlace no conectado");
+        delete(msg);
+        return;
+    }
     Link *pk = check_and_cast<Link *>(msg);
     int r_seq = pk->getSeq();
     if (pk->hasBitError())
     {
-        //paquete con error
+        //no se puede saber la secuenica se manda el NACK con el esperado
         bubble("message error");
-        if(r_seq==(seq+1)){
-            //el que se esperaba
-            sentNack(r_seq);
-            emit(s_sndNack,++sndNack);
-        }
-        /*Si es menor ya se ha recivido correctametne y se obvia*/
-        /*Si es mayor que el esperado se obvia*/
+        sentNack(r_seq);
+        emit(s_sndNack,++sndNack);
+
         delete(pk);
      }
      else

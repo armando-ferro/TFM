@@ -28,7 +28,7 @@ class simple_fisico: public cSimpleModule
 {
 private:
     /*gestiones internas*/
-    bool b_config;
+    bool b_down,b_up;
     short state_machine;
     cQueue *txQueue;
     cChannel * txChannel;
@@ -75,7 +75,8 @@ simple_fisico::simple_fisico() {
     s_rcvBit = 0;
     s_rcvPkt = 0;
 
-    b_config = true;
+    b_down = true;
+    b_up = true;
 }
 
 simple_fisico::~simple_fisico() {
@@ -101,12 +102,16 @@ void simple_fisico::initialize(){
     if(gate("out")->isConnected()){
         txChannel = gate("out")->getTransmissionChannel();
     }else{
-        b_config = false;
+        b_down = false;
+    }
+
+    if(not(gate("up_out")->isConnected())){
+        b_up = false;
     }
 
 
     WATCH(state_machine);
-    WATCH(b_config);
+    WATCH(b_down);
 }
 
 void simple_fisico::handleMessage(cMessage *msg){
@@ -125,7 +130,7 @@ void simple_fisico::handleMessage(cMessage *msg){
         /*comprobar si es de capa superior o exterior*/
         if(msg->arrivedOn("up_in")){
             /*capa superior, extraer comprobar estado*/
-            if(not(b_config)){
+            if(not(b_down)){
                 bubble("Imposible mandar mensajes, no conectado");
                 delete(msg);
                 return;
@@ -148,6 +153,11 @@ void simple_fisico::handleMessage(cMessage *msg){
             delete(rx);
         }else{
             /*externo, subir*/
+            if(not(b_up)){
+                bubble("Imposible mandar mensaje. Enlace no concectado");
+                delete(msg);
+                return;
+            }
             cPacket * rxp = check_and_cast<cPacket *>(msg);
             send_up(rxp);
         }

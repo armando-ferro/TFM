@@ -35,7 +35,7 @@ private:
     cQueue *txQueue;
     cChannel * txChannel;
     cMessage *sent;
-    bool b_config;
+    bool b_up,b_down;
     /*extracción de estadísticas*/
     int sndBit;
     int sndPkt;
@@ -90,7 +90,8 @@ fisico::fisico() {
     s_errorPkt = 0;
     s_queueTam = 0;
 
-    b_config = true;
+    b_up = true;
+    b_down = true;
 
     WATCH(max_state);
 }
@@ -128,13 +129,17 @@ void fisico::initialize(){
     if(gate("out")->isConnected()){
         txChannel = gate("out")->getTransmissionChannel();
     }else{
-        b_config = false;
+        b_down = false;
+    }
+
+    if(not(gate("up_out")->isConnected())){
+        b_up = false;
     }
 
 
     WATCH(state_machine);
     WATCH(max_state);
-    WATCH(b_config);
+    WATCH(b_up);
 }
 
 void fisico::handleMessage(cMessage *msg){
@@ -154,7 +159,7 @@ void fisico::handleMessage(cMessage *msg){
         /*comprobar si es de capa superior o exterior*/
         if(msg->arrivedOn("up_in")){
             /*capa superior, extraer comprobar estado*/
-            if(not(b_config)){
+            if(not(b_down)){
                 bubble("Imposible mandar mensajes, no conectado");
                 delete(msg);
                 return;
@@ -197,6 +202,11 @@ void fisico::handleMessage(cMessage *msg){
             delete(rx);
         }else{
             /*externo, comprobar eror y tipo, desencapsular y subir a la capa superior*/
+            if(not(b_up)){
+                bubble("Imposible mandar mensajes, no conectado");
+                delete(msg);
+                return;
+            }
             Link * rxp = check_and_cast<Link *>(msg);
             if(rxp->hasBitError()){
                 bubble("Paquete con error");

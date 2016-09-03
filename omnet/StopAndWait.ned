@@ -22,11 +22,10 @@ network StopAndWait
             @display("p=45,107");
             Addr = 101;
         }
-        fisico: fisico {
+        fisico: simple_fisico {
             @display("p=45,190");
-            Queue_Length = 20;
         }
-        fisico1: fisico {
+        fisico1: simple_fisico {
             @display("p=539,190");
         }
         sw1: free_sw {
