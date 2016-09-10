@@ -36,7 +36,7 @@ simple fisico
 
         @signal[errorPkt](type="int");
         @statistic[error_Pkt](title="errorPkt"; source="errorPkt"; record=vector);
-        
+
         @signal[QueueState](type="int");
         @statistic[Queue_State](title="QueueState"; source="QueueState"; record=vector);
 
@@ -72,6 +72,133 @@ simple simple_fisico
         input up_in @loose;
 }
 
+
+simple senderSW
+{
+    parameters:
+
+        int Header_Tam = default(0);
+        int Queue_Length = default(-1);
+
+        @signal[rcvACK](type="int");
+        @statistic[rcv_ACK](title="rcvACK"; source="rcvACK"; record=vector);
+
+        @signal[rcvNACK](type="int");
+        @statistic[rcv_NACK](title="rcvNACK"; source="rcvNACK"; record=vector);
+
+        @signal[QueueState](type="int");
+        @statistic[Queue_State](title="QueueState"; source="QueueState"; record=vector);
+
+        @signal[sndBit](type="int");
+        @statistic[snd_Bit](title="sndBit"; source="sndBit"; record=vector);
+
+        @signal[sndPkt](type="int");
+        @statistic[snd_Pkt](title="sndPkt"; source="sndPkt"; record=vector);
+
+        @signal[lostPkt](type="int");
+        @statistic[lost_Pkt](title="lostPkt"; source="lostPkt"; record=vector);
+
+        @display("i=block/queue");
+
+    gates:
+        input up_in;
+        input in;
+        output out;
+}
+
+simple senderGBN
+{
+    parameters:
+
+        int Header_Tam = default(0);
+        int Queue_Length = default(-1);
+        int Window_Length = default(-1);
+
+        @signal[rcvACK](type="int");
+        @statistic[rcv_ACK](title="rcvACK"; source="rcvACK"; record=vector);
+
+        @signal[rcvNACK](type="int");
+        @statistic[rcv_NACK](title="rcvNACK"; source="rcvNACK"; record=vector);
+
+        @signal[QueueState](type="int");
+        @statistic[Queue_State](title="QueueState"; source="QueueState"; record=vector);
+
+        @signal[WindowTam](type="int");
+        @statistic[Window_Tam](title="WindowTam"; source="WindowTam"; record=vector);
+
+        @signal[sndBit](type="int");
+        @statistic[snd_Bit](title="sndBit"; source="sndBit"; record=vector);
+
+        @signal[sndPkt](type="int");
+        @statistic[snd_Pkt](title="sndPkt"; source="sndPkt"; record=vector);
+
+        @signal[lostPkt](type="int");
+        @statistic[lost_Pkt](title="lostPkt"; source="lostPkt"; record=vector);
+
+        @display("i=block/queue");
+
+    gates:
+        input up_in;
+        input in;
+        output out;
+}
+
+simple receiverACK
+{
+    parameters:
+        @signal[sndACK](type="int");
+        @statistic[snd_ACK](title="sndACK"; source="sndACK"; record=vector);
+
+        @signal[sndNACK](type="int");
+        @statistic[snd_NACK](title="sndNACK"; source="sndNACK"; record=vector);
+
+        @signal[rcvBit](type="int");
+        @statistic[rcv_Bit](title="rcvBit"; source="rcvBit"; record=vector);
+
+        @signal[rcvPkt](type="int");
+        @statistic[rcv_Pkt](title="rcvPkt"; source="rcvPkt"; record=vector);
+
+        int Ack_Tam = default(1);
+
+        @display("i=block/arrival");
+    gates:
+        input in;
+        output out;
+        output up_out;
+
+}
+
+simple router
+{
+    parameters:
+        @display("i=block/routing");
+        int Addr = default(00);
+        int Hop_Limit = default(10);
+        int Header_Tam = default(0);
+        xml Config_File = default(xmldoc("pr.xml"));
+
+        @signal[errorPkt](type="int");
+        @statistic[error_Pkt](title="errorPkt"; source="errorPkt"; record=vector);
+
+        @signal[rcvBit](type="int");
+        @statistic[rcv_Bit](title="rcvBit"; source="rcvBit"; record=vector);
+
+        @signal[rcvPkt](type="int");
+        @statistic[rcv_Pkt](title="rcvPkt"; source="rcvPkt"; record=vector);
+
+        @signal[forwardedBit](type="int");
+        @statistic[forwarded_Bit](title="forwardedBit"; source="forwardedBit"; record=vector);
+
+        @signal[forwardedPkt](type="int");
+        @statistic[forwarded_Pkt](title="forwardedPkt"; source="forwardedPkt"; record=vector);
+
+    gates:
+        output up_out[10] @loose;
+        input up_in[10] @loose;
+        output down_out[10] @loose;
+        input down_in[10] @loose;
+
+}
 
 simple free_sw
 {
@@ -168,138 +295,12 @@ simple dump
         input down_in;
 }
 
-simple senderSW
-{
-    parameters:
-        
-        int Header_Tam = default(0);
-        int Queue_Length = default(-1);
-
-        @signal[rcvACK](type="int");
-        @statistic[rcv_ACK](title="rcvACK"; source="rcvACK"; record=vector);
-
-        @signal[rcvNACK](type="int");
-        @statistic[rcv_NACK](title="rcvNACK"; source="rcvNACK"; record=vector);
-
-        @signal[QueueState](type="int");
-        @statistic[Queue_State](title="QueueState"; source="QueueState"; record=vector);
-        
-        @signal[sndBit](type="int");
-        @statistic[snd_Bit](title="sndBit"; source="sndBit"; record=vector);
-
-        @signal[sndPkt](type="int");
-        @statistic[snd_Pkt](title="sndPkt"; source="sndPkt"; record=vector);
-
-        @signal[lostPkt](type="int");
-        @statistic[lost_Pkt](title="lostPkt"; source="lostPkt"; record=vector);
-
-        @display("i=block/queue");
-
-    gates:
-        input up_in;
-        input in;
-        output out;
-}
-
-simple senderGBN
-{
-    parameters:
-
-		int Header_Tam = default(0);
-        int Queue_Length = default(-1);
-        int Window_Length = default(-1);
-
-        @signal[rcvACK](type="int");
-        @statistic[rcv_ACK](title="rcvACK"; source="rcvACK"; record=vector);
-
-        @signal[rcvNACK](type="int");
-        @statistic[rcv_NACK](title="rcvNACK"; source="rcvNACK"; record=vector);
-
-        @signal[QueueState](type="int");
-        @statistic[Queue_State](title="QueueState"; source="QueueState"; record=vector);
-
-        @signal[WindowTam](type="int");
-        @statistic[Window_Tam](title="WindowTam"; source="WindowTam"; record=vector);
-        
-        @signal[sndBit](type="int");
-        @statistic[snd_Bit](title="sndBit"; source="sndBit"; record=vector);
-
-        @signal[sndPkt](type="int");
-        @statistic[snd_Pkt](title="sndPkt"; source="sndPkt"; record=vector);
-
-        @signal[lostPkt](type="int");
-        @statistic[lost_Pkt](title="lostPkt"; source="lostPkt"; record=vector);
-
-        @display("i=block/queue");
-
-    gates:
-        input up_in;
-        input in;
-        output out;
-}
-
-simple receiverACK
-{
-    parameters:
-        @signal[sndACK](type="int");
-        @statistic[snd_ACK](title="sndACK"; source="sndACK"; record=vector);
-
-        @signal[sndNACK](type="int");
-        @statistic[snd_NACK](title="sndNACK"; source="sndNACK"; record=vector);
-        
-        @signal[rcvBit](type="int");
-        @statistic[rcv_Bit](title="rcvBit"; source="rcvBit"; record=vector);
-
-        @signal[rcvPkt](type="int");
-        @statistic[rcv_Pkt](title="rcvPkt"; source="rcvPkt"; record=vector);
-
-        int Ack_Tam = default(1);
-
-        @display("i=block/arrival");
-    gates:
-        input in;
-        output out;
-        output up_out;
-
-}
-
-simple router
-{
-    parameters:
-        @display("i=block/routing");
-        int Addr = default(00);
-        int Hop_Limit = default(10);
-        int Header_Tam = default(0);
-        xml Config_File = default(xmldoc("pr.xml"));
-        
-        @signal[errorPkt](type="int");
-        @statistic[error_Pkt](title="errorPkt"; source="errorPkt"; record=vector);
-        
-        @signal[rcvBit](type="int");
-        @statistic[rcv_Bit](title="rcvBit"; source="rcvBit"; record=vector);
-        
-      	@signal[rcvPkt](type="int");
-        @statistic[rcv_Pkt](title="rcvPkt"; source="rcvPkt"; record=vector);
-        
-        @signal[forwardedBit](type="int");
-        @statistic[forwarded_Bit](title="forwardedBit"; source="forwardedBit"; record=vector);
-        
-        @signal[forwardedPkt](type="int");
-        @statistic[forwarded_Pkt](title="forwardedPkt"; source="forwardedPkt"; record=vector);
-        
-    gates:
-        output up_out[10] @loose;
-        input up_in[10] @loose;
-        output down_out[10] @loose;
-        input down_in[10] @loose;
-
-}
-
 simple mux
 {
     parameters:
         @display("i=block/join");
         xml config = default(xmldoc("mux.xml"));
+        int Header_Tam = default(0);
     gates:
         output out;
         input in[] @loose;
@@ -311,6 +312,7 @@ simple mux_priority
     parameters:
         @display("i=block/join");
         xml config = default(xmldoc("mux.xml"));
+        int Header_Tam = default(0);
     gates:
         output out;
         input in[] @loose;
@@ -361,7 +363,7 @@ module mux3_1
         m_in1.up_out --> mux.in++;
         m_in2.up_out --> mux.in++;
         m_in3.up_out --> mux.in++;
-        mux.out -->out;
+        mux.out --> out;
 }
 
 module Pmux3_1
@@ -397,7 +399,7 @@ module Pmux3_1
         m_in1.up_out --> mux.in++;
         m_in2.up_out --> mux.in++;
         m_in3.up_out --> mux.in++;
-        mux.out -->out;
+        mux.out --> out;
 }
 
 module demux1_3
@@ -427,13 +429,13 @@ module demux1_3
             @display("p=120,120");
         }
     connections:
-        in-->demux.in;
-        demux.out++-->m_out1.up_in;
-        demux.out++-->m_out2.up_in;
-        demux.out++-->m_out3.up_in;
-        m_out1.out-->out1;
-        m_out2.out-->out2;
-        m_out3.out-->out3;        
+        in --> demux.in;
+        demux.out++ --> m_out1.up_in;
+        demux.out++ --> m_out2.up_in;
+        demux.out++ --> m_out3.up_in;
+        m_out1.out --> out1;
+        m_out2.out --> out2;
+        m_out3.out --> out3;
 }
 
 
@@ -497,24 +499,24 @@ module InOut2SW
             @display("p=259,348");
         }
     connections:
-		
-		injector.down_out-->transport.up_in;
-		transport.up_out-->dump.down_in;
-		
-		transport.down_out-->router.up_in[1];
-		router.up_out[1]-->transport.down_in;
-		
-		router.down_out[1]-->if1.up_in;
-		if1.up_out-->router.down_in[1];
-		
-		router.down_out[2]-->if2.up_in;
-		if2.up_out-->router.down_in[2];
-		
-		if1.out-->out1;
-		if2.out-->out2;
-		
-		in1-->if1.in;
-		in2-->if2.in;
+
+        injector.down_out --> transport.up_in;
+        transport.up_out --> dump.down_in;
+
+        transport.down_out --> router.up_in[1];
+        router.up_out[1] --> transport.down_in;
+
+        router.down_out[1] --> if1.up_in;
+        if1.up_out --> router.down_in[1];
+
+        router.down_out[2] --> if2.up_in;
+        if2.up_out --> router.down_in[2];
+
+        if1.out --> out1;
+        if2.out --> out2;
+
+        in1 --> if1.in;
+        in2 --> if2.in;
 
 }
 
@@ -581,24 +583,24 @@ module InOut2GBN
             @display("p=259,348");
         }
     connections:
-		
-		injector.down_out-->transport.up_in;
-		transport.up_out-->dump.down_in;
-		
-		transport.down_out-->router.up_in[1];
-		router.up_out[1]-->transport.down_in;
-		
-		router.down_out[1]-->if1.up_in;
-		if1.up_out-->router.down_in[1];
-		
-		router.down_out[2]-->if2.up_in;
-		if2.up_out-->router.down_in[2];
-		
-		if1.out-->out1;
-		if2.out-->out2;
-		
-		in1-->if1.in;
-		in2-->if2.in;
+
+        injector.down_out --> transport.up_in;
+        transport.up_out --> dump.down_in;
+
+        transport.down_out --> router.up_in[1];
+        router.up_out[1] --> transport.down_in;
+
+        router.down_out[1] --> if1.up_in;
+        if1.up_out --> router.down_in[1];
+
+        router.down_out[2] --> if2.up_in;
+        if2.up_out --> router.down_in[2];
+
+        if1.out --> out1;
+        if2.out --> out2;
+
+        in1 --> if1.in;
+        in2 --> if2.in;
 
 }
 

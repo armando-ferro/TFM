@@ -176,6 +176,8 @@ void router::initialize(){
 
 void router::handleMessage(cMessage *msg){
     if(not(b_config)){
+        bubble("Configuracion errónea");
+        delete(msg);
         return;
     }
     inter_layer *il = check_and_cast<inter_layer *>(msg);
@@ -188,7 +190,6 @@ void router::handleMessage(cMessage *msg){
         switch(protocol){
         case p_application:
             /*directamente desde la aplicación*/
-            EV << " Application";
             if(dest<min_trans||dest>max_trans){
                 bubble("Destino no válido");
                 delete(il);
@@ -199,7 +200,6 @@ void router::handleMessage(cMessage *msg){
             break;
         case p_transport:
             /*Capa de transporte*/
-            EV << " Transport";
             if(dest<min_net||dest>max_net){
                 bubble("Destino no válido");
                 delete(il);
@@ -207,7 +207,6 @@ void router::handleMessage(cMessage *msg){
             }
             break;
         default:
-            EV << " No válido";
             bubble("Protocolo no válido");
             delete(il);
             return;
@@ -249,9 +248,9 @@ void router::handleMessage(cMessage *msg){
         if(dest==origen){
             /*soy el destinatario*/
             send_up(nw);
+            delete(il);
         }else{
             /*necesario rutar*/
-            EV << " Rutar";
             /*comprobar hop limit*/
             if(nw->getHopCount()>=nw->getHopLimit()){
                 /*eliminar el paquete*/
@@ -284,11 +283,13 @@ int router::config(cXMLElement *xml){
 
     if(strcmp(xml->getTagName(),"routes")!=0){
         /*no es el tipo esperado*/
+        EV << "XML inesperado";
         return -1;
     }
 
     if(not(xml->hasChildren())){
         /*no contine rutas*/
+        EV << "No hay rutas";
         return -1;
     }
 
@@ -375,7 +376,6 @@ int router::config(cXMLElement *xml){
 
 void router::send_route(int dest,inter_layer *il){
     /*comprobar con que ruta encaja*/
-    EV << " Rutando:"<<dest;
     /*se extrae el tamaño porque el il no tiene cabecera*/
     int tam = il->getBitLength();
     forwardedBit += tam;
@@ -409,19 +409,17 @@ void router::send_route(int dest,inter_layer *il){
 
 void router::send_up(Network *nw){
     /*según el protocolo*/
-    EV << "SendUP";
     inter_layer *il = new inter_layer("Network_up",0);
     switch(nw->getProtocol()){
         case p_application:{
             /*Primera puerta conectada*/
-            EV << " Application";
             cPacket * app = (cPacket *) nw->decapsulate();
             /*generar inter layer*/
             il->setOrigen(nw->getSrcAddr());
             il->setDestino(origen);
             il->encapsulate(app);
             for(int i=0;i<max;i++){
-                if(not(up_out[i])){
+                if(up_out[i]){
                     send(il,"up_out",i);
                 }
             }
@@ -433,7 +431,6 @@ void router::send_up(Network *nw){
         }
         case p_transport:{
             /*por el puerto indicado*/
-            EV << " Transport";
             Transport * tp = (Transport *) nw->decapsulate();
             int gate = tp->getDstAddr();
             if(gate<min_trans||gate>max_trans){
