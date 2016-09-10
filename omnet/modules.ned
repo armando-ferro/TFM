@@ -324,6 +324,12 @@ simple demux
     parameters:
         @display("i=block/join");
         xml config = default(xmldoc("demux.xml"));
+        
+        @signal[rcvBit](type="double");
+        @statistic[rcv_bit](title="rcvBit"; source="rcvBit"; record=vector);
+
+        @signal[rcvPkt](type="int");
+        @statistic[rcv_Pkt](title="rcvPkt"; source="rcvPkt"; record=vector);
     gates:
         output out[];
         input in;

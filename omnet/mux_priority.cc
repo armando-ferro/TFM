@@ -42,6 +42,7 @@ private:
     cChannel * txChannel;
     cMessage *sent;
     short *line_queue;
+    int header_tam;
 public:
     mux_priority();
     virtual ~mux_priority();
@@ -75,6 +76,11 @@ mux_priority::~mux_priority() {
 void mux_priority::initialize(){
     n = gateSize("in");
     input_line = new input[n];
+
+    /*parametros*/
+    if(par("Header_Tam").containsValue()){
+        header_tam = par("Header_Tam");
+    }
 
     /*inicializar a inexistente*/
     for(int i=0;i<n;i++){
@@ -132,6 +138,13 @@ void mux_priority::handleMessage(cMessage *msg){
         state_machine = idle;
     }else{
         int g_in,line;
+        /*comprobar si error*/
+        cPacket *pk = check_and_cast<cPacket *>(msg);
+        if(pk->hasBitError()){
+            bubble("Paquete con error");
+            delete(pk);
+            return;
+        }
         /*reconcoer por cual llega*/
         for(g_in=0;g_in<n;g_in++){
             if(msg->arrivedOn("in",g_in)){
@@ -156,6 +169,18 @@ int mux_priority::config(cXMLElement *xml){
     int pmax = 0;
     int n_priority = 0;
     int priority,i;
+
+    if(strcmp(xml->getTagName(),"inputs")!=0){
+          /*no es el tipo esperado*/
+          EV << "XML inesperado";
+          return false;
+    }
+
+    if(not(xml->hasChildren())){
+        /*no contine rutas*/
+        EV << "No hay lineas";
+        return false;
+    }
 
     tmp = xml->getFirstChild();
     do{
@@ -245,6 +270,7 @@ void mux_priority::send_out(int line,short priority,cMessage *msg){
     sprintf(msgname,"Mux-%d",line);
     Mux *mx = new Mux(msgname,0);
     mx->setLine(line);
+    mx->setBitLength(header_tam);
     mx->encapsulate(pk);
     /*comprobar estado*/
     if(state_machine == idle){

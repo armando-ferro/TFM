@@ -23,9 +23,15 @@ class demux : public cSimpleModule {
 private:
     /*variables*/
     int n;
+    int rcvBit;
+    int rcvPkt;
+    int errorPkt;
     cXMLElement * xml;
     short *line_input;    //transformación entre entrada y linea
     bool b_config;
+    simsignal_t s_rcvBit;
+    simsignal_t s_rcvPkt;
+    simsignal_t s_errorPkt;
 public:
     demux();
     virtual ~demux();
@@ -44,6 +50,12 @@ demux::demux() {
     xml = NULL;
     line_input = NULL;
     b_config = true;
+    rcvBit = 0;
+    rcvPkt = 0;
+    errorPkt = 0;
+    s_rcvBit = 0;
+    s_rcvPkt = 0;
+    s_errorPkt = 0;
 }
 
 demux::~demux() {
@@ -55,6 +67,10 @@ void demux::initialize(){
         xml = par("config").xmlValue();
         b_config = config(xml);
     }
+
+    s_rcvBit = registerSignal("rcvBit");
+    s_rcvPkt = registerSignal("rcvPkt");
+    s_errorPkt = registerSignal("errorPkt");
 
     WATCH(n);
     WATCH(b_config);
@@ -68,6 +84,17 @@ void demux::handleMessage(cMessage *msg){
     }
     /*solo hay una entrada*/
     Mux *mx = check_and_cast<Mux *>(msg);
+    int tam;
+    tam  = mx->getBitLength();
+    rcvBit += tam;
+    emit(s_rcvBit,rcvBit);
+    emit(s_rcvPkt,++rcvPkt);
+    if(mx->hasBitError()){
+        bubble("Paquete con error");
+        emit(s_errorPkt,++errorPkt);
+        delete(mx);
+    }
+
     line = mx->getLine();
     gate = line_input[line];
     if(gate<0){
@@ -87,7 +114,19 @@ void demux::handleMessage(cMessage *msg){
 bool demux::config(cXMLElement * xml){
     cXMLElement *tmp;
     int i,line,tmp_line;
-    short gate;
+    short out_gate;
+
+    if(strcmp(xml->getTagName(),"lines")!=0){
+          /*no es el tipo esperado*/
+          EV << "XML inesperado";
+          return false;
+    }
+
+    if(not(xml->hasChildren())){
+        /*no contine rutas*/
+        EV << "No hay lineas";
+        return false;
+    }
 
     line = 0;
     /*detectar cuantas líneas hay*/
@@ -117,12 +156,16 @@ bool demux::config(cXMLElement * xml){
             EV << "La línea ya ha sido asignada:" <<tmp_line;
             return false;
         }
-        gate=atoi(tmp->getAttribute("gate"));
-        if(gate<0||gate>n){
+        out_gate=atoi(tmp->getAttribute("gate"));
+        if(out_gate<0||out_gate>n){
             EV << "La puerta fuera de rango (0-"<<n<<")";
             return false;
         }
-        line_input[tmp_line]=gate;
+        if(not(gate("out",out_gate)->isConnected())){
+            EV << "La puerta"<< out_gate <<" no está conectada";
+            return false;
+        }
+        line_input[tmp_line]=out_gate;
     }while((tmp=tmp->getNextSibling())!=NULL);
 
     return true;

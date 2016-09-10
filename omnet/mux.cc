@@ -36,6 +36,7 @@ private:
     cQueue *txQueue;
     cChannel * txChannel;
     cMessage *sent;
+    int header_tam;
 public:
     mux();
     virtual ~mux();
@@ -56,6 +57,7 @@ mux::mux() {
     txQueue = NULL;
     txChannel = NULL;
     sent = NULL;
+    header_tam  = 0;
 }
 
 mux::~mux() {
@@ -67,6 +69,7 @@ void mux::initialize(){
     n = gateSize("in");
     input_line = new short[n];
 
+
     /*inicializar a inexistente*/
     for(int i=0;i<n;i++){
         input_line[i]=-1;
@@ -75,6 +78,10 @@ void mux::initialize(){
     if(par("config").containsValue()){
         xml = par("config").xmlValue();
         b_config = config(xml);
+    }
+
+    if(par("Header_Tam").containsValue()){
+        header_tam = par("Header_Tam");
     }
 
     /*Cola de mensajes a enviar*/
@@ -114,6 +121,13 @@ void mux::handleMessage(cMessage *msg){
         }
     }else{
         int g_in,line;
+        /*comprobar error*/
+        cPacket *pk = check_and_cast<cPacket *>(msg);
+        if(pk->hasBitError()){
+            bubble("Paquete con error");
+            delete(pk);
+            return;
+        }
         /*reconcoer por cual llega*/
         for(g_in=0;g_in<n;g_in++){
             if(msg->arrivedOn("in",g_in)){
@@ -135,6 +149,18 @@ void mux::handleMessage(cMessage *msg){
 bool mux::config(cXMLElement *xml){
     cXMLElement *tmp;
     short in,line;
+
+    if(strcmp(xml->getTagName(),"inputs")!=0){
+          /*no es el tipo esperado*/
+          EV << "XML inesperado";
+          return false;
+    }
+
+    if(not(xml->hasChildren())){
+        /*no contine rutas*/
+        EV << "No hay lineas";
+        return false;
+    }
 
     tmp = xml->getFirstChild();
     do{
@@ -173,6 +199,7 @@ void mux::send_out(int line,cMessage *msg){
     sprintf(msgname,"Mux-%d",line);
     Mux *mx = new Mux(msgname,0);
     mx->setLine(line);
+    mx->setBitLength(header_tam);
     mx->encapsulate(pk);
     /*comprobar estado*/
     if(state_machine == idle){
