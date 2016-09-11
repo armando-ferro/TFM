@@ -175,7 +175,7 @@ simple router
         int Addr = default(00);
         int Hop_Limit = default(10);
         int Header_Tam = default(0);
-        xml Config_File = default(xmldoc("pr.xml"));
+        xml Config_File = default(xmldoc("Red/router.xml"));
 
         @signal[errorPkt](type="int");
         @statistic[error_Pkt](title="errorPkt"; source="errorPkt"; record=vector);
@@ -299,7 +299,7 @@ simple mux
 {
     parameters:
         @display("i=block/join");
-        xml config = default(xmldoc("mux.xml"));
+        xml config = default(xmldoc("Multiplexor/mux.xml"));
         int Header_Tam = default(0);
     gates:
         output out;
@@ -311,7 +311,7 @@ simple mux_priority
 {
     parameters:
         @display("i=block/join");
-        xml config = default(xmldoc("mux.xml"));
+        xml config = default(xmldoc("Multiplexor/mux.xml"));
         int Header_Tam = default(0);
     gates:
         output out;
@@ -323,7 +323,7 @@ simple demux
 {
     parameters:
         @display("i=block/join");
-        xml config = default(xmldoc("demux.xml"));
+        xml config = default(xmldoc("Multiplexor/demux.xml"));
         
         @signal[rcvBit](type="double");
         @statistic[rcv_bit](title="rcvBit"; source="rcvBit"; record=vector);
@@ -449,7 +449,7 @@ module InOut2SW
 {
     parameters:
         int Addr = default(00);
-        xml Config_File = default(xmldoc("pr.xml"));
+        xml Config_File = default(xmldoc("Red/router.xml"));
         int L_Queue_Length = default(-1);
         int T_Queue_Length = default(-1);
         int T_Time_Out = default(100);
@@ -531,7 +531,7 @@ module InOut2GBN
 {
     parameters:
         int Addr = default(00);
-        xml Config_File = default(xmldoc("pr.xml"));
+        xml Config_File = default(xmldoc("Red/router.xml"));
         int L_Queue_Length = default(-1);
         int T_Queue_Length = default(-1);
         int T_Time_Out = default(100);
