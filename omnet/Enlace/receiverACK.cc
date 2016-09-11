@@ -54,6 +54,7 @@ receiverACK::receiverACK() {
     s_rcvBit = 0;
     s_rcvPkt = 0;
     ack_tam = 1;
+    b_config = true;
 
 }
 
@@ -72,10 +73,12 @@ void receiverACK::initialize(){
     }
 
     if(not(gate("out")->isConnected())){
+        EV << "Puerta out no conectada";
         b_config = false;
     }
 
     if(not(gate("up_out")->isConnected())){
+        EV << "Puerta up_out no conectada";
         b_config = false;
     }
 }

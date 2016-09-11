@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE routes SYSTEM "route.dtd" > 
+<!DOCTYPE routes SYSTEM "Red/route.dtd" > 
 
 <routes>
 	<route start="0" stop="99">
