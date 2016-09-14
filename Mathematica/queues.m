@@ -26,6 +26,7 @@ StatusProbPasta::usage="StatusProbPasta[queue] Calcula la probabilidad de estado
 StatusProbTime::usage="StatusProbPasta[queue] Calcula la probabilidad de estado de una
 					cola en funci\[OAcute]n del tiempo en cada estado";
 MeanSystemTime::usage="MeanSystemTime[queue]Calcula el tiempo medio de estado en el sistema de una cola";
+QueueThAcum::usage="QueueThAcum[queue] Calcula el throughput de la cola en pkt/s";
 
 Begin["`private`"]
 Module[{Z0=2000,a=314159269, c=453806245,m=2^21},
@@ -85,9 +86,13 @@ Map[{#[[1]],#[[2]]/finishTime//N}&,Status]
 (*Funci\[OAcute]n para calcular el tiempo medio en el sistema*)
 (*MeanSystemTime[queue_]:=Mean[Map[((#[[2]]+#[[3]])-#[[1]])&,queue]];*)
 MeanSystemTime[queue_]:=Module[{x={}},Do[If[n[[2]]===Null,,AppendTo[x,((n[[2]]+n[[3]])-n[[1]])]],{n,queue}];Mean[x]];
+QueueThAcum[lpkt_]:=Map[#[[4]]/#[[2]]&,lpkt];
 ]
 End[]
 EndPackage[]
+
+
+
 
 
 
