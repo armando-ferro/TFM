@@ -86,10 +86,13 @@ Map[{#[[1]],#[[2]]/finishTime//N}&,Status]
 (*Funci\[OAcute]n para calcular el tiempo medio en el sistema*)
 (*MeanSystemTime[queue_]:=Mean[Map[((#[[2]]+#[[3]])-#[[1]])&,queue]];*)
 MeanSystemTime[queue_]:=Module[{x={}},Do[If[n[[2]]===Null,,AppendTo[x,((n[[2]]+n[[3]])-n[[1]])]],{n,queue}];Mean[x]];
-QueueThAcum[lpkt_]:=Map[#[[4]]/#[[2]]&,lpkt];
+QueueThAcum[lpkt_]:=Module[{last={0,0}},Map[If[#[[2]]===Null,last={#[[2]],(last[[1]]*last[[2]])/#[[2]]},last={#[[2]],#[[4]]/#[[2]]}]&,lpkt]];
 ]
 End[]
 EndPackage[]
+
+
+
 
 
 

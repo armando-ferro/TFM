@@ -9,10 +9,10 @@ GetPacketArrival::usage="GetPacketArrival[lmb,mu,initTime,n] Genera la llegada d
 				 en initTime llegan con tasa lmb y un timpo de servicio mu";
 FifoSW::usage="FifoSW[lpkt,error] simula el paso por un servicio FIFO Stop & Wait con un probabilidad de error 'erro'";
 ToTime::usage="ToTime[lpkt] pasa a tiempo la lista de paquetes que est\[AAcute] en modo tama\[NTilde]o de paquete";
-LaunchSimTxSW::usage="LaunchSimTxSW[tasa,tp,p,n,lamba] realiza la simulaci\[OAcute]n completa de un sistema FIFO Stop & Wait
+LaunchSimTxSW::usage="LaunchSimTxSW[tasa,tp,p,n,lamba,speed,ack] realiza la simulaci\[OAcute]n completa de un sistema FIFO Stop & Wait
 					tasa de llegada, tiempo de propagaci\[OAcute]n tp, error p, paquetes n y tiempo de servicio lambda";
 FifoGBN::usage="FifoGBN[lpkt,error] simula el paso por un servicio FIFO Go Back N con una probabilida de error 'error'";
-LaunchSimTxGBN::usage="LaunchSimTxGBN[tasa,tp,p,n,lamba] realiza la simulaci\[OAcute]n completa de un sistema FIFO Go BackN
+LaunchSimTxGBN::usage="LaunchSimTxGBN[tasa,tp,p,n,lamba,speed,ack] realiza la simulaci\[OAcute]n completa de un sistema FIFO Go BackN
 					tasa de llegada, tiempo de propagaci\[OAcute]n tp, error p , paquetes n y tiempo de servicio lamba";
 Begin["`private`"]
 
@@ -42,7 +42,7 @@ Flatten[Map[NestWhileList[GetPacketTxSW[#]&,GetPacketTxSW[#],(#[[4]]==1)&]&,lpkt
 ToTime[pkt_]:=Map[{#[[1]],#[[2]]/lspeed,#[[3]],#[[4]],#[[5]]}&,pkt];
 
 (*Funci\[OAcute]n para lanzar una simulaic\[OAcute]n de SW*)
-LaunchSimTxSW[tasa_,tp_,p_,n_,lambda_]:=(SetInitPar[1,tp,0];ToTime[FifoSW[GetPacketArrival[tasa,lambda,0,n],p]]);
+LaunchSimTxSW[tasa_,tp_,p_,n_,lambda_,speed_,ack_]:=(SetInitPar[speed,tp,ack];ToTime[FifoSW[GetPacketArrival[tasa,lambda,0,n],p]]);
 SetAttributes[LaunchSimTxSW,HoldAll];
 
 (*Cola GBN*)
@@ -107,7 +107,7 @@ NestWhileList[(GetPacketRTxGBN[pck,npck,pcomb,Unevaluated[arrivals]]&),GetPacket
 ];
 
 (*Funci\[OAcute]n para lanzar una simulaci\[OAcute]n de GBN*)
-LaunchSimTxGBN[tasa_,tp_,p_,n_,lambda_]:=(SetInitPar[1,tp,0];ToTime[FifoGBN[GetPacketArrival[tasa,lambda,0,n],p]]);
+LaunchSimTxGBN[tasa_,tp_,p_,n_,lambda_,speed_,ack_]:=(SetInitPar[speed,tp,ack];ToTime[FifoGBN[GetPacketArrival[tasa,lambda,0,n],p]]);
 (*se deben mantener sin evaluar los par\[AAcute]metros de entrada ya que se usa una funci\[OAcute]n que hace esto.*)
 SetAttributes[LaunchSimTxGBN,HoldAll];
 
